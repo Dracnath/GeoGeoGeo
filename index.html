@@ -1,0 +1,2561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GEO-QUEST — World Capitals, Flags &amp; Shapes</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    :root {
+      --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "Courier New", Courier, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+      --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+      --font-round: "Trebuchet MS", "Segoe UI Rounded", "Arial Rounded MT Bold", system-ui, sans-serif;
+    }
+    body {
+      font-family: var(--font-mono);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    button, input, select {
+      font: inherit;
+    }
+    button {
+      cursor: pointer;
+    }
+    button:disabled {
+      cursor: default;
+    }
+    .hidden {
+      display: none !important;
+    }
+
+    /* ==========================================
+       SKIN 1 (DEFAULT): CLEAN 8-BIT RETRO
+       ========================================== */
+    .theme-retro {
+      background-color: #131722;
+      color: #f1f5f9;
+      font-family: var(--font-mono);
+    }
+    .theme-retro .phone-shell {
+      background: #1c2230;
+      padding: 22px 18px;
+      border: 3px solid #334155;
+      box-shadow: 6px 6px 0 #0b0e14;
+    }
+    .theme-retro .title-font,
+    .theme-retro .pixel-font {
+      font-family: var(--font-mono);
+      letter-spacing: 0.02em;
+    }
+    .theme-retro .stamp-frame {
+      background: #131722;
+      border: 2px solid #475569;
+      box-shadow: 4px 4px 0 #0b0e14;
+    }
+    .theme-retro .btn-choice {
+      background: #252d3d;
+      border: 2px solid #64748b;
+      box-shadow: 4px 4px 0 #0b0e14;
+      color: #f8fafc;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 15px;
+      transition: transform 0.06s steps(2), border-color 0.1s ease, background-color 0.1s ease;
+    }
+    .theme-retro .btn-choice:hover:not(:disabled) {
+      background: #2e384d;
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+    .theme-retro .btn-choice:active:not(:disabled) {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0 #0b0e14;
+    }
+    .theme-retro .drawer-details {
+      background: #181d2a;
+      border: 2px solid #262f40;
+      color: #94a3b8;
+    }
+    .theme-retro .region-select {
+      background: #131722;
+      border: 1.5px solid #475569;
+      color: #f8fafc;
+    }
+    .theme-retro .btn-setting-action {
+      background: #252d3d;
+      border: 1px solid #475569;
+      color: #38bdf8;
+    }
+    .theme-retro .box-stat-cell {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid #334155;
+      color: #cbd5e1;
+    }
+    .theme-retro .studio-btn {
+      background: #1e293b;
+      border: 1.5px solid #475569;
+      color: #e2e8f0;
+    }
+    .theme-retro .studio-btn.active-theme {
+      background: #fbbf24;
+      color: #0f172a;
+      border-color: #d97706;
+    }
+
+    /* ==========================================
+       SKIN 2: VINTAGE AIR-MAIL POSTCARD
+       (Fully Theme-Integrated Settings Elements)
+       ========================================== */
+    .theme-airmail {
+      background-color: #e6dec8;
+      background-image: radial-gradient(#cbbd9d 1px, transparent 1px);
+      background-size: 16px 16px;
+      color: #2b2623;
+      font-family: var(--font-mono);
+    }
+    .theme-airmail .phone-shell {
+      background:
+        linear-gradient(#fdf8ec, #fdf8ec) padding-box,
+        repeating-linear-gradient(
+          -45deg,
+          #d13b34 0px,
+          #d13b34 14px,
+          #fdf8ec 14px,
+          #fdf8ec 22px,
+          #204b7d 22px,
+          #204b7d 36px,
+          #fdf8ec 36px,
+          #fdf8ec 44px
+        ) border-box;
+      border: 11px solid transparent;
+      padding: 20px 16px;
+      box-shadow: 0 14px 32px rgba(43, 38, 35, 0.22), inset 0 0 0 1.5px #d5c7ad;
+    }
+    .theme-airmail .title-font {
+      font-family: var(--font-serif);
+    }
+    .theme-airmail .stamp-frame {
+      background: #fffdf7;
+      border: 2.5px dashed #b59f79;
+      box-shadow: 0 3px 0 #dfd3bc;
+    }
+    .theme-airmail .btn-choice {
+      background: #fffdf9;
+      border: 2px solid #2b2623;
+      box-shadow: 3px 3px 0 #2b2623;
+      color: #2b2623;
+      font-weight: 700;
+    }
+    .theme-airmail .btn-choice:hover:not(:disabled) {
+      background: #f5ecd8;
+      border-color: #204b7d;
+    }
+    .theme-airmail .mode-tab {
+      border-color: #bda988;
+      color: #2b2623;
+    }
+    .theme-airmail .mode-tab.active-mode {
+      border-color: #d13b34;
+      background: rgba(209, 59, 52, 0.12);
+      color: #b02a24;
+    }
+    .theme-airmail .game-input {
+      background: #fffdf9;
+      color: #2b2623;
+      border-color: #2b2623;
+    }
+    .theme-airmail .drawer-details {
+      background: #fdf8ec;
+      border: 2px solid #b59f79;
+      color: #3b322a;
+      box-shadow: 3px 3px 0 #cfc3a9;
+    }
+    .theme-airmail .drawer-section {
+      border-top-color: #d5c7ad;
+    }
+    .theme-airmail .region-select {
+      background: #fffdf7;
+      border: 2px solid #2b2623;
+      color: #2b2623;
+    }
+    .theme-airmail .btn-setting-action {
+      background: #fffdf7;
+      border: 2px solid #204b7d;
+      color: #204b7d;
+      box-shadow: 2px 2px 0 #204b7d;
+    }
+    .theme-airmail .box-stat-cell {
+      background: #fffdf7;
+      border: 1.5px solid #b59f79;
+      color: #2b2623;
+    }
+    .theme-airmail .box-stat-cell .lvl-title {
+      color: #204b7d !important;
+    }
+    .theme-airmail .studio-btn {
+      background: #fffdf7;
+      border: 2px solid #2b2623;
+      box-shadow: 2px 2px 0 #2b2623;
+      color: #2b2623;
+    }
+    .theme-airmail .studio-btn.active-theme {
+      background: #fbbf24;
+      border-color: #d13b34;
+      color: #0f172a;
+      box-shadow: 2px 2px 0 #d13b34;
+    }
+    .theme-airmail .feedback-box {
+      border-color: #1e7a46;
+      background: #f0fdf4;
+      color: #14532d;
+    }
+    .theme-airmail .feedback-box.wrong {
+      border-color: #d13b34;
+      background: #fef2f2;
+      color: #7f1d1d;
+    }
+    .ink-stamp {
+      display: inline-block;
+      padding: 3px 9px;
+      border: 2px solid #1e7a46;
+      color: #1e7a46;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      transform: rotate(-4deg);
+    }
+
+    /* ==========================================
+       SKIN 3: COZY POCKET GLOBETROTTER
+       ========================================== */
+    .theme-globetrotter {
+      background: linear-gradient(160deg, #e0f2fe 0%, #fef3c7 60%, #fce7f3 100%);
+      color: #1e293b;
+      font-family: var(--font-round);
+    }
+    .theme-globetrotter .phone-shell {
+      background: #ffffff;
+      padding: 22px 18px;
+      border-radius: 26px;
+      border: 4px solid #38bdf8;
+      box-shadow: 0 10px 0 #0284c7, 0 18px 36px rgba(2, 132, 199, 0.16);
+    }
+    .theme-globetrotter .stamp-frame {
+      background: #f0f9ff;
+      border: 2.5px solid #bae6fd;
+      border-radius: 18px;
+    }
+    .theme-globetrotter .btn-choice {
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-bottom-width: 5px;
+      border-radius: 14px;
+      color: #1e293b;
+      font-weight: 700;
+    }
+    .theme-globetrotter .btn-choice:hover:not(:disabled) {
+      border-color: #38bdf8;
+      background: #f0f9ff;
+    }
+    .theme-globetrotter .mode-tab {
+      border-color: #cbd5e1;
+      border-radius: 10px;
+      color: #334155;
+    }
+    .theme-globetrotter .mode-tab.active-mode {
+      border-color: #0284c7;
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    .theme-globetrotter .game-input {
+      background: #ffffff;
+      color: #1e293b;
+      border-color: #94a3b8;
+      border-radius: 12px;
+    }
+    .theme-globetrotter .drawer-details {
+      background: #ffffff;
+      border: 3px solid #38bdf8;
+      border-radius: 18px;
+      color: #1e293b;
+      box-shadow: 0 6px 0 #bae6fd;
+    }
+    .theme-globetrotter .drawer-section {
+      border-top-color: #e2e8f0;
+    }
+    .theme-globetrotter .region-select {
+      background: #f8fafc;
+      border: 2px solid #cbd5e1;
+      border-radius: 10px;
+      color: #1e293b;
+    }
+    .theme-globetrotter .btn-setting-action {
+      background: #e0f2fe;
+      border: 2px solid #0284c7;
+      border-radius: 10px;
+      color: #0369a1;
+      font-weight: 700;
+    }
+    .theme-globetrotter .box-stat-cell {
+      background: #f0f9ff;
+      border: 2px solid #bae6fd;
+      border-radius: 10px;
+      color: #1e293b;
+    }
+    .theme-globetrotter .studio-btn {
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 10px;
+      color: #334155;
+    }
+    .theme-globetrotter .studio-btn.active-theme {
+      background: #38bdf8;
+      border-color: #0284c7;
+      color: #ffffff;
+    }
+
+    /* ==========================================
+       LOCKED BUTTON STATES
+       ========================================== */
+    .btn-choice.locked-correct {
+      border-color: #10b981 !important;
+      background: rgba(16, 185, 129, 0.22) !important;
+      color: #34d399 !important;
+    }
+    .theme-airmail .btn-choice.locked-correct,
+    .theme-globetrotter .btn-choice.locked-correct {
+      color: #065f46 !important;
+      background: #d1fae5 !important;
+    }
+    .btn-choice.locked-wrong {
+      border-color: #f43f5e !important;
+      background: rgba(244, 63, 94, 0.22) !important;
+      color: #fb7185 !important;
+      opacity: 0.9;
+    }
+    .theme-airmail .btn-choice.locked-wrong,
+    .theme-globetrotter .btn-choice.locked-wrong {
+      color: #881337 !important;
+      background: #ffe4e6 !important;
+    }
+    .btn-choice.locked-dim {
+      opacity: 0.45;
+    }
+
+    /* ==========================================
+       CORE MOBILE GAME LAYOUT
+       ========================================== */
+    .workspace-main {
+      max-width: 430px;
+      margin: 0 auto;
+      padding: 18px 14px 36px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .phone-column {
+      width: 100%;
+    }
+    .hud-minimal {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      font-size: 12px;
+    }
+    .hud-brand {
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .hud-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      opacity: 0.9;
+    }
+    .mode-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .mode-tab {
+      padding: 8px 6px;
+      border: 2px solid #334155;
+      background: transparent;
+      color: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0.7;
+      transition: all 0.12s ease;
+    }
+    .mode-tab.active-mode {
+      border-color: #fbbf24;
+      background: rgba(251, 191, 36, 0.14);
+      color: #fbbf24;
+      opacity: 1;
+    }
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(128, 128, 128, 0.2);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 10%;
+      background: #38b764;
+      transition: width 0.25s ease;
+    }
+    .card-box {
+      padding: 24px 18px;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+    .shape-box {
+      width: 100%;
+      max-width: 260px;
+      height: 180px;
+      margin: 0 auto 8px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .shape-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .shape-path {
+      fill: #38bdf8;
+      stroke: #e0f2fe;
+      stroke-width: 1.5;
+      stroke-linejoin: round;
+    }
+    .theme-airmail .shape-path {
+      fill: #204b7d;
+      stroke: #2b2623;
+    }
+    .theme-globetrotter .shape-path {
+      fill: #38bdf8;
+      stroke: #0284c7;
+    }
+    .flag-large {
+      font-size: 54px;
+      line-height: 1.05;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .flag-img {
+      display: inline-block;
+      object-fit: cover;
+      border: 1.5px solid rgba(128, 128, 128, 0.45);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      vertical-align: middle;
+    }
+    .flag-img-lg {
+      width: 112px;
+      height: 84px;
+      margin: 0 auto 12px auto;
+      display: block;
+    }
+    .flag-img-md {
+      width: 104px;
+      height: 78px;
+    }
+    .flag-img-sm {
+      width: 80px;
+      height: 60px;
+    }
+    .flag-img-xs {
+      width: 22px;
+      height: 16px;
+      margin-right: 4px;
+    }
+    .choices-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .choice-row-btn {
+      width: 100%;
+      padding: 13px 15px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Adaptive Flag Grid (4 or 6 flags) */
+    .flag-grid-container {
+      display: grid;
+      gap: 10px;
+    }
+    .flag-grid-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .flag-grid-6 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .flag-grid-btn {
+      padding: 14px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      text-align: center;
+    }
+
+    .text-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .game-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #64748b;
+      background: #131722;
+      color: #f8fafc;
+      font-family: var(--font-mono);
+      font-size: 15px;
+    }
+    .game-input:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    .chip-pill {
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fbbf24;
+      color: #0f172a;
+      border: none;
+      border-radius: 4px;
+    }
+    .trivia-slot {
+      padding: 9px 12px;
+      border: 1.5px dashed rgba(128, 128, 128, 0.5);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 7px;
+    }
+    .trivia-slot.solved {
+      border: 2px solid #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      font-weight: 700;
+    }
+    .feedback-box {
+      margin-top: 14px;
+      padding: 13px;
+      border: 2px solid #10b981;
+      background: rgba(16, 185, 129, 0.16);
+    }
+    .feedback-box.wrong {
+      border-color: #f43f5e;
+      background: rgba(244, 63, 94, 0.16);
+    }
+    .feedback-bullet-list {
+      margin: 6px 0 0 0;
+      padding-left: 18px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .feedback-bullet-list li {
+      margin-bottom: 3px;
+    }
+
+    /* Tucked Clean Settings Menu */
+    .drawer-details {
+      width: 100%;
+      padding: 11px 14px;
+      font-size: 12px;
+    }
+    .drawer-details summary {
+      cursor: pointer;
+      font-weight: 700;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      list-style: none;
+    }
+    .drawer-section {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(128, 128, 128, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .region-select {
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .btn-setting-action {
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .box-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      text-align: center;
+    }
+    .box-stat-cell {
+      padding: 6px 4px;
+      font-size: 11px;
+    }
+    .skins-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      width: 100%;
+    }
+    .studio-btn {
+      width: 100%;
+      padding: 8px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+    .summary-row {
+      padding: 8px 10px;
+      border: 1px solid rgba(128, 128, 128, 0.3);
+      background: rgba(0, 0, 0, 0.12);
+      font-size: 12px;
+      text-align: left;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body class="theme-retro" id="appBody">
+
+  <main class="workspace-main">
+
+    <!-- MAIN MOBILE GAME SCREEN -->
+    <div class="phone-column">
+      <div class="phone-shell">
+
+        <!-- SHOWN ONLY WHEN JS IS BLOCKED (e.g., iOS QuickLook Preview) -->
+        <div id="jsRequiredBanner" style="margin-bottom:14px;padding:10px 12px;border:2px solid #fbbf24;background:rgba(251,191,36,0.14);font-size:12px;line-height:1.4;text-align:left;">
+          <strong>Preview Mode Detected:</strong> Interactive buttons are disabled in file previewers (like iPhone QuickLook). Open this game via a web link (e.g. Netlify Drop) or an HTML-capable browser app to play.
+        </div>
+
+        <!-- SLIM 1-LINE HEADER -->
+        <div class="hud-minimal">
+          <span id="hudTitle" class="title-font hud-brand">GEO-QUEST</span>
+          <div class="hud-stats">
+            <span id="regionPill" style="opacity:0.75;">WORLD</span>
+            <span id="roundReadout">RD 01</span>
+            <span id="hudStreak">🔥 0</span>
+            <button id="btnSoundToggle" onclick="toggleSound()" style="background:none;border:none;color:inherit;padding:0;font-size:12px;" title="Toggle sound">
+              🔊 SFX: ON
+            </button>
+          </div>
+        </div>
+
+        <!-- 3-TAB MODE BAR -->
+        <div id="inGameModeTabs" class="mode-bar">
+          <button id="modeBtnLearn" onclick="switchInGameMode('learn')" class="mode-tab active-mode">
+            LEARN
+          </button>
+          <button id="modeBtnFlags" onclick="switchInGameMode('flags')" class="mode-tab">
+            FLAGS
+          </button>
+          <button id="modeBtnShapes" onclick="switchInGameMode('shapes')" class="mode-tab">
+            SHAPES
+          </button>
+        </div>
+
+        <!-- THIN PROGRESS BAR -->
+        <div class="progress-track" title="10-Question Round Progress">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+
+        <!-- SPACIOUS QUESTION CARD (CLEAN GEOGRAPHIC HEADER) -->
+        <div id="questionCard" class="stamp-frame card-box">
+          <div id="boxBadge" style="font-size:11px;opacity:0.65;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">
+            NORDIC EUROPE
+          </div>
+          <span class="flag-large">🇮🇸</span>
+          <div style="font-size:12px;opacity:0.65;margin-bottom:4px;">CAPITAL OF</div>
+          <div class="title-font" style="font-size:26px;font-weight:700;">ICELAND</div>
+          <div id="stampOverlaySpot" style="margin-top:8px;"></div>
+        </div>
+
+        <!-- ANSWER CONTROLS AREA -->
+        <div id="answerArea">
+          <div class="choices-list">
+            <button onclick="handleBox1Answer('Reykjavík')" class="btn-choice choice-row-btn">
+              <span>Reykjavík</span><span style="opacity:0.5;">►</span>
+            </button>
+            <button onclick="handleBox1Answer('Oslo')" class="btn-choice choice-row-btn">
+              <span>Oslo</span><span style="opacity:0.5;">►</span>
+            </button>
+            <button onclick="handleBox1Answer('Helsinki')" class="btn-choice choice-row-btn">
+              <span>Helsinki</span><span style="opacity:0.5;">►</span>
+            </button>
+            <button onclick="handleBox1Answer('Tórshavn')" class="btn-choice choice-row-btn">
+              <span>Tórshavn</span><span style="opacity:0.5;">►</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- FEEDBACK BANNER (BULLET POINT STYLE WITH CAPITAL) -->
+        <div id="feedbackBanner" class="feedback-box hidden">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <div style="flex:1;">
+              <div id="feedbackHeadline" style="font-weight:700;font-size:14px;"></div>
+              <div id="feedbackSubtext" style="font-size:12px;margin-top:4px;opacity:0.92;line-height:1.4;"></div>
+            </div>
+            <button id="btnNextCard" onclick="nextSampleQuestion()"
+              style="padding:8px 13px;font-size:12px;font-weight:700;background:#fbbf24;color:#0f172a;border:none;flex-shrink:0;">
+              NEXT ►
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TUCKED CLEAN SETTINGS MENU (MATCHES CURRENT ACTIVE SKIN) -->
+    <details class="drawer-details" id="conceptSidebar">
+      <summary>
+        <span>⚙ Settings</span>
+        <span id="progressLabel" style="font-weight:400;opacity:0.8;">Card 1/10</span>
+      </summary>
+
+      <div class="drawer-section">
+        <!-- Region Filter -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <label for="regionSelect" style="font-weight:700;">Continent Deck (195 Countries):</label>
+          <select id="regionSelect" onchange="changeRegion(this.value)" class="region-select">
+            <option value="All">All World (195)</option>
+            <option value="Africa">Africa (54)</option>
+            <option value="Americas">Americas (35)</option>
+            <option value="Asia">Asia (48)</option>
+            <option value="Europe">Europe (44)</option>
+            <option value="Oceania">Oceania (14)</option>
+          </select>
+        </div>
+
+        <!-- Mastery Level Breakdown (Level 1 to Level 5) -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-weight:700;">Learning Levels (Mastery):</span>
+            <button onclick="advanceBingeRound()" class="btn-setting-action">
+              ⏩ Fast-Forward Round (+1)
+            </button>
+          </div>
+          <div class="box-stat-grid">
+            <div class="box-stat-cell"><div class="lvl-title" style="font-weight:700;color:#fbbf24;">LVL 1</div><div id="statB1">6</div><div style="font-size:9px;opacity:0.7;">New</div></div>
+            <div class="box-stat-cell"><div class="lvl-title" style="font-weight:700;color:#38bdf8;">LVL 2</div><div id="statB2">0</div><div style="font-size:9px;opacity:0.7;">Familiar</div></div>
+            <div class="box-stat-cell"><div class="lvl-title" style="font-weight:700;color:#a78bfa;">LVL 3</div><div id="statB3">0</div><div style="font-size:9px;opacity:0.7;">Practiced</div></div>
+            <div class="box-stat-cell"><div class="lvl-title" style="font-weight:700;color:#34d399;">LVL 4</div><div id="statB4">0</div><div style="font-size:9px;opacity:0.7;">Strong</div></div>
+            <div class="box-stat-cell"><div class="lvl-title" style="font-weight:700;color:#10b981;">LVL 5</div><div id="statB5">0</div><div style="font-size:9px;opacity:0.7;">Mastered</div></div>
+          </div>
+        </div>
+
+        <!-- Visual Skins: 3 Equal-Width Boxes Spanning Full Width -->
+        <div>
+          <div style="font-weight:700;margin-bottom:6px;">Skins:</div>
+          <div class="skins-grid">
+            <button id="btnThemeRetro" onclick="setTheme('retro')" class="studio-btn active-theme">
+              <span style="font-size:16px;">👾</span>
+              <span>8-Bit Retro</span>
+            </button>
+            <button id="btnThemeAirmail" onclick="setTheme('airmail')" class="studio-btn">
+              <span style="font-size:16px;">✉️</span>
+              <span>Air-Mail</span>
+            </button>
+            <button id="btnThemeGlobetrotter" onclick="setTheme('globetrotter')" class="studio-btn">
+              <span style="font-size:16px;">🎈</span>
+              <span>Globetrotter</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Jump-to-Tier Shortcuts & Reset -->
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;padding-top:6px;border-top:1px solid rgba(128,128,128,0.2);">
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            <button id="tabMech1" onclick="setMechanic('box1')" class="btn-setting-action">Level 1–2 (Choice)</button>
+            <button id="tabMech2" onclick="setMechanic('box3flag')" class="btn-setting-action">Level 3 (Flags)</button>
+            <button id="tabMech3" onclick="setMechanic('box4type')" class="btn-setting-action">Level 4 (Typed)</button>
+            <button id="tabMech4" onclick="setMechanic('shapes')" class="btn-setting-action">Shapes</button>
+          </div>
+          <button onclick="resetAllProgress()" style="background:none;border:none;color:#f43f5e;text-decoration:underline;font-size:11px;padding:0;">
+            Reset Save
+          </button>
+        </div>
+
+        <!-- Preserved compatibility elements -->
+        <div class="hidden">
+          <button id="modeBtnTrivia" onclick="switchInGameMode('trivia')">TRIVIA</button>
+          <button onclick="setMechanic('trivia')">Trivia</button><button onclick="setTheme('airmail')">✉️ Air-Mail Postcard</button>
+          <button id="btnCompareAll" onclick="toggleCompareView()">⊞ Side-by-Side Notes</button>
+          <div id="cardCompareAirmail" onclick="setTheme('airmail')">1. Air-Mail</div>
+          <div id="cardCompareGlobetrotter" onclick="setTheme('globetrotter')">2. Globetrotter</div>
+          <div id="cardCompareRetro" onclick="setTheme('retro')">3. 8-Bit Retro</div>
+          <span id="hudSubtitle"></span>
+          <span id="hudRankBadge"></span>
+          <span id="whimsyTracker"><span id="whimsyLeftText"></span></span>
+          <span id="themeVibeSummary"></span>
+          <span id="sideConceptTag"></span>
+          <span id="sideConceptTitle"></span>
+          <div id="sideConceptBody"></div>
+          <button onclick="setMechanic('box1')">Box 1–2: Flag + Capital Tied</button>
+          <button onclick="setMechanic('box3flag')">Box 3 Split: Flag Grid</button>
+          <button onclick="setMechanic('box4type')">Box 4–5: Fuzzy Autocomplete</button>
+          <button onclick="setMechanic('trivia')">Trivia: "3 Countries in Africa..."</button>
+          <button onclick="switchInGameMode('learn')">📚 Learn</button>
+          <button onclick="switchInGameMode('flags')">🏳️ Flags Only</button>
+          <button onclick="switchInGameMode('trivia')">✨ Trivia</button>
+          <button onclick="nextSampleQuestion()">Next Card →</button>
+          <button onclick="handleBox1Answer('Reykjavík')">ReykjavíkTap</button>
+          <button onclick="handleBox1Answer('Oslo')">OsloTap</button>
+          <button onclick="handleBox1Answer('Helsinki')">HelsinkiTap</button>
+          <button onclick="handleBox1Answer('Tórshavn')">TórshavnTap</button>
+          <button onclick="fillSampleTypo()">Test Typo ("Antananrivo")</button>
+          <button onclick="fillSampleTypo()">Test typo ("Antananrivo")</button>
+          <button onclick="fillSampleTypo()">Hint (1st 3 letters)</button>
+          <button onclick="quickPickTrivia('Algeria')">+Algeria</button>
+          <button onclick="quickPickTrivia('Ghana')">+Ghana</button>
+          <button onclick="quickPickTrivia('Nigeria')">+Nigeria</button>
+          <button onclick="quickPickTrivia('Ethiopia')">+Ethiopia</button>
+          <button onclick="revealAllAfricaA()">Reveal All</button>
+          <button onclick="setMechanic('box1')">1. Box 1–2 (Unified)</button>
+          <button onclick="setMechanic('box3flag')">2. Box 3 (Flags)</button>
+          <button onclick="setMechanic('box4type')">3. Box 4 (Type)</button>
+          <button onclick="setMechanic('trivia')">4. Trivia ("Africa A")</button>
+          <button onclick="setTheme('retro')">👾 3. 8-Bit Bitmap Retro</button>
+          <button onclick="setTheme('airmail')">✉️ 1. Vintage Air-Mail</button>
+          <button onclick="setTheme('globetrotter')">🎈 2. Cozy Globetrotter</button>
+        </div>
+      </div>
+    </details>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // COMPLETE 195 SOVEREIGN COUNTRIES DATASET WITH SUB-REGIONS
+    // =========================================================================
+    const RAW_COUNTRIES = [
+      // AFRICA (54)
+      ["Algeria","Algiers","🇩🇿","Africa","North Africa"],["Angola","Luanda","🇦🇴","Africa","Southern Africa"],
+      ["Benin","Porto-Novo","🇧🇯","Africa","West Africa"],["Botswana","Gaborone","🇧🇼","Africa","Southern Africa"],
+      ["Burkina Faso","Ouagadougou","🇧🇫","Africa","West Africa"],["Burundi","Gitega","🇧🇮","Africa","East Africa"],
+      ["Cabo Verde","Praia","🇨🇻","Africa","West Africa (Atlantic)"],["Cameroon","Yaoundé","🇨🇲","Africa","Central Africa"],
+      ["Central African Republic","Bangui","🇨🇫","Africa","Central Africa"],["Chad","N'Djamena","🇹🇩","Africa","Central Africa"],
+      ["Comoros","Moroni","🇰🇲","Africa","Indian Ocean Africa"],["Congo","Brazzaville","🇨🇬","Africa","Central Africa"],
+      ["DR Congo","Kinshasa","🇨🇩","Africa","Central Africa"],["Côte d'Ivoire","Yamoussoukro","🇨🇮","Africa","West Africa"],
+      ["Djibouti","Djibouti","🇩🇯","Africa","Horn of Africa"],["Egypt","Cairo","🇪🇬","Africa","North Africa"],
+      ["Equatorial Guinea","Malabo","🇬🇶","Africa","Central Africa"],["Eritrea","Asmara","🇪🇷","Africa","Horn of Africa"],
+      ["Eswatini","Mbabane","🇸🇿","Africa","Southern Africa"],["Ethiopia","Addis Ababa","🇪🇹","Africa","Horn of Africa"],
+      ["Gabon","Libreville","🇬🇦","Africa","Central Africa"],["Gambia","Banjul","🇬🇲","Africa","West Africa"],
+      ["Ghana","Accra","🇬🇭","Africa","West Africa"],["Guinea","Conakry","🇬🇳","Africa","West Africa"],
+      ["Guinea-Bissau","Bissau","🇬🇼","Africa","West Africa"],["Kenya","Nairobi","🇰🇪","Africa","East Africa"],
+      ["Lesotho","Maseru","🇱🇸","Africa","Southern Africa"],["Liberia","Monrovia","🇱🇷","Africa","West Africa"],
+      ["Libya","Tripoli","🇱🇾","Africa","North Africa"],["Madagascar","Antananarivo","🇲🇬","Africa","Indian Ocean Africa"],
+      ["Malawi","Lilongwe","🇲🇼","Africa","Southern Africa"],["Mali","Bamako","🇲🇱","Africa","West Africa"],
+      ["Mauritania","Nouakchott","🇲🇷","Africa","West Africa"],["Mauritius","Port Louis","🇲🇺","Africa","Indian Ocean Africa"],
+      ["Morocco","Rabat","🇲🇦","Africa","North Africa"],["Mozambique","Maputo","🇲🇿","Africa","Southern Africa"],
+      ["Namibia","Windhoek","🇳🇦","Africa","Southern Africa"],["Niger","Niamey","🇳🇪","Africa","West Africa"],
+      ["Nigeria","Abuja","🇳🇬","Africa","West Africa"],["Rwanda","Kigali","🇷🇼","Africa","East Africa"],
+      ["São Tomé and Príncipe","São Tomé","🇸🇹","Africa","Central Africa"],["Senegal","Dakar","🇸🇳","Africa","West Africa"],
+      ["Seychelles","Victoria","🇸🇨","Africa","Indian Ocean Africa"],["Sierra Leone","Freetown","🇸🇱","Africa","West Africa"],
+      ["Somalia","Mogadishu","🇸🇴","Africa","Horn of Africa"],["South Africa","Pretoria","🇿🇦","Africa","Southern Africa"],
+      ["South Sudan","Juba","🇸🇸","Africa","East Africa"],["Sudan","Khartoum","🇸🇩","Africa","North Africa"],
+      ["Tanzania","Dodoma","🇹🇿","Africa","East Africa"],["Togo","Lomé","🇹🇬","Africa","West Africa"],
+      ["Tunisia","Tunis","🇹🇳","Africa","North Africa"],["Uganda","Kampala","🇺🇬","Africa","East Africa"],
+      ["Zambia","Lusaka","🇿🇲","Africa","Southern Africa"],["Zimbabwe","Harare","🇿🇼","Africa","Southern Africa"],
+
+      // AMERICAS (35)
+      ["Antigua and Barbuda","Saint John's","🇦🇬","Americas","Caribbean"],["Argentina","Buenos Aires","🇦🇷","Americas","Southern Cone"],
+      ["Bahamas","Nassau","🇧🇸","Americas","Caribbean"],["Barbados","Bridgetown","🇧🇧","Americas","Caribbean"],
+      ["Belize","Belmopan","🇧🇿","Americas","Central America"],["Bolivia","Sucre","🇧🇴","Americas","Andean South America"],
+      ["Brazil","Brasília","🇧🇷","Americas","South America"],["Canada","Ottawa","🇨🇦","Americas","North America"],
+      ["Chile","Santiago","🇨🇱","Americas","Southern Cone"],["Colombia","Bogotá","🇨🇴","Americas","Andean South America"],
+      ["Costa Rica","San José","🇨🇷","Americas","Central America"],["Cuba","Havana","🇨🇺","Americas","Caribbean"],
+      ["Dominica","Roseau","🇩🇲","Americas","Caribbean"],["Dominican Republic","Santo Domingo","🇩🇴","Americas","Caribbean"],
+      ["Ecuador","Quito","🇪🇨","Americas","Andean South America"],["El Salvador","San Salvador","🇸🇻","Americas","Central America"],
+      ["Grenada","Saint George's","🇬🇩","Americas","Caribbean"],["Guatemala","Guatemala City","🇬🇹","Americas","Central America"],
+      ["Guyana","Georgetown","🇬🇾","Americas","Northern South America"],["Haiti","Port-au-Prince","🇭🇹","Americas","Caribbean"],
+      ["Honduras","Tegucigalpa","🇭🇳","Americas","Central America"],["Jamaica","Kingston","🇯🇲","Americas","Caribbean"],
+      ["Mexico","Mexico City","🇲🇽","Americas","North America"],["Nicaragua","Managua","🇳🇮","Americas","Central America"],
+      ["Panama","Panama City","🇵🇦","Americas","Central America"],["Paraguay","Asunción","🇵🇾","Americas","Southern Cone"],
+      ["Peru","Lima","🇵🇪","Americas","Andean South America"],["Saint Kitts and Nevis","Basseterre","🇰🇳","Americas","Caribbean"],
+      ["Saint Lucia","Castries","🇱🇨","Americas","Caribbean"],["Saint Vincent and the Grenadines","Kingstown","🇻🇨","Americas","Caribbean"],
+      ["Suriname","Paramaribo","🇸🇷","Americas","Northern South America"],["Trinidad and Tobago","Port of Spain","🇹🇹","Americas","Caribbean"],
+      ["United States","Washington, D.C.","🇺🇸","Americas","North America"],["Uruguay","Montevideo","🇺🇾","Americas","Southern Cone"],
+      ["Venezuela","Caracas","🇻🇪","Americas","Northern South America"],
+
+      // ASIA (48)
+      ["Afghanistan","Kabul","🇦🇫","Asia","South-Central Asia"],["Armenia","Yerevan","🇦🇲","Asia","Caucasus"],
+      ["Azerbaijan","Baku","🇦🇿","Asia","Caucasus"],["Bahrain","Manama","🇧🇭","Asia","Arabian Gulf"],
+      ["Bangladesh","Dhaka","🇧🇩","Asia","South Asia"],["Bhutan","Thimphu","🇧🇹","Asia","Himalayan South Asia"],
+      ["Brunei","Bandar Seri Begawan","🇧🇳","Asia","Maritime SE Asia"],["Cambodia","Phnom Penh","🇰🇭","Asia","Mainland SE Asia"],
+      ["China","Beijing","🇨🇳","Asia","East Asia"],["Cyprus","Nicosia","🇨🇾","Asia","Eastern Mediterranean"],
+      ["Georgia","Tbilisi","🇬🇪","Asia","Caucasus"],["India","New Delhi","🇮🇳","Asia","South Asia"],
+      ["Indonesia","Jakarta","🇮🇩","Asia","Maritime SE Asia"],["Iran","Tehran","🇮🇷","Asia","Middle East"],
+      ["Iraq","Baghdad","🇮🇶","Asia","Middle East"],["Israel","Jerusalem","🇮🇱","Asia","Levant"],
+      ["Japan","Tokyo","🇯🇵","Asia","East Asia"],["Jordan","Amman","🇯🇴","Asia","Levant"],
+      ["Kazakhstan","Astana","🇰🇿","Asia","Central Asia"],["Kuwait","Kuwait City","🇰🇼","Asia","Arabian Gulf"],
+      ["Kyrgyzstan","Bishkek","🇰🇬","Asia","Central Asia"],["Laos","Vientiane","🇱🇦","Asia","Mainland SE Asia"],
+      ["Lebanon","Beirut","🇱🇧","Asia","Levant"],["Malaysia","Kuala Lumpur","🇲🇾","Asia","Maritime SE Asia"],
+      ["Maldives","Malé","🇲🇻","Asia","Indian Ocean South Asia"],["Mongolia","Ulaanbaatar","🇲🇳","Asia","East Asia"],
+      ["Myanmar","Naypyidaw","🇲🇲","Asia","Mainland SE Asia"],["Nepal","Kathmandu","🇳🇵","Asia","Himalayan South Asia"],
+      ["North Korea","Pyongyang","🇰🇵","Asia","East Asia"],["Oman","Muscat","🇴🇲","Asia","Arabian Peninsula"],
+      ["Pakistan","Islamabad","🇵🇰","Asia","South Asia"],["Palestine","Ramallah","🇵🇸","Asia","Levant"],
+      ["Philippines","Manila","🇵🇭","Asia","Maritime SE Asia"],["Qatar","Doha","🇶🇦","Asia","Arabian Gulf"],
+      ["Saudi Arabia","Riyadh","🇸🇦","Asia","Arabian Peninsula"],["Singapore","Singapore","🇸🇬","Asia","Maritime SE Asia"],
+      ["South Korea","Seoul","🇰🇷","Asia","East Asia"],["Sri Lanka","Sri Jayawardenepura Kotte","🇱🇰","Asia","South Asia"],
+      ["Syria","Damascus","🇸🇾","Asia","Levant"],["Taiwan","Taipei","🇹🇼","Asia","East Asia"],
+      ["Tajikistan","Dushanbe","🇹🇯","Asia","Central Asia"],["Thailand","Bangkok","🇹🇭","Asia","Mainland SE Asia"],
+      ["Timor-Leste","Dili","🇹🇱","Asia","Maritime SE Asia"],["Turkey","Ankara","🇹🇷","Asia","Anatolia / Middle East"],
+      ["Turkmenistan","Ashgabat","🇹🇲","Asia","Central Asia"],["United Arab Emirates","Abu Dhabi","🇦🇪","Asia","Arabian Gulf"],
+      ["Uzbekistan","Tashkent","🇺🇿","Asia","Central Asia"],["Vietnam","Hanoi","🇻🇳","Asia","Mainland SE Asia"],
+      ["Yemen","Sana'a","🇾🇪","Asia","Arabian Peninsula"],
+
+      // EUROPE (44)
+      ["Albania","Tirana","🇦🇱","Europe","Western Balkans"],["Andorra","Andorra la Vella","🇦🇩","Europe","Pyrenees Microstate"],
+      ["Austria","Vienna","🇦🇹","Europe","Central Europe"],["Belarus","Minsk","🇧🇾","Europe","Eastern Europe"],
+      ["Belgium","Brussels","🇧🇪","Europe","Benelux"],["Bosnia and Herzegovina","Sarajevo","🇧🇦","Europe","Western Balkans"],
+      ["Bulgaria","Sofia","🇧🇬","Europe","Balkans"],["Croatia","Zagreb","🇭🇷","Europe","Balkans / Adriatic"],
+      ["Czechia","Prague","🇨🇿","Europe","Central Europe"],["Denmark","Copenhagen","🇩🇰","Europe","Nordic Europe"],
+      ["Estonia","Tallinn","🇪🇪","Europe","Baltic States"],["Finland","Helsinki","🇫🇮","Europe","Nordic Europe"],
+      ["France","Paris","🇫🇷","Europe","Western Europe"],["Germany","Berlin","🇩🇪","Europe","Central Europe"],
+      ["Greece","Athens","🇬🇷","Europe","Southern Europe"],["Hungary","Budapest","🇭🇺","Europe","Central Europe"],
+      ["Iceland","Reykjavík","🇮🇸","Europe","Nordic Europe"],["Ireland","Dublin","🇮🇪","Europe","British Isles"],
+      ["Italy","Rome","🇮🇹","Europe","Southern Europe"],["Kosovo","Pristina","🇽🇰","Europe","Western Balkans"],
+      ["Latvia","Riga","🇱🇻","Europe","Baltic States"],["Liechtenstein","Vaduz","🇱🇮","Europe","Alpine Microstate"],
+      ["Lithuania","Vilnius","🇱🇹","Europe","Baltic States"],["Luxembourg","Luxembourg","🇱🇺","Europe","Benelux"],
+      ["Malta","Valletta","🇲🇹","Europe","Mediterranean Europe"],["Moldova","Chișinău","🇲🇩","Europe","Eastern Europe"],
+      ["Monaco","Monaco","🇲🇨","Europe","Riviera Microstate"],["Montenegro","Podgorica","🇲🇪","Europe","Western Balkans"],
+      ["Netherlands","Amsterdam","🇳🇱","Europe","Benelux"],["North Macedonia","Skopje","🇲🇰","Europe","Western Balkans"],
+      ["Norway","Oslo","🇳🇴","Europe","Nordic Europe"],["Poland","Warsaw","🇵🇱","Europe","Central Europe"],
+      ["Portugal","Lisbon","🇵🇹","Europe","Iberian Peninsula"],["Romania","Bucharest","🇷🇴","Europe","Southeastern Europe"],
+      ["Russia","Moscow","🇷🇺","Europe","Eastern Europe"],["San Marino","San Marino","🇸🇲","Europe","Italian Enclave"],
+      ["Serbia","Belgrade","🇷🇸","Europe","Western Balkans"],["Slovakia","Bratislava","🇸🇰","Europe","Central Europe"],
+      ["Slovenia","Ljubljana","🇸🇮","Europe","Central / Alpine Europe"],["Spain","Madrid","🇪🇸","Europe","Iberian Peninsula"],
+      ["Sweden","Stockholm","🇸🇪","Europe","Nordic Europe"],["Switzerland","Bern","🇨🇭","Europe","Alpine Europe"],
+      ["Ukraine","Kyiv","🇺🇦","Europe","Eastern Europe"],["United Kingdom","London","🇬🇧","Europe","British Isles"],
+      ["Vatican City","Vatican City","🇻🇦","Europe","Roman Enclave"],
+
+      // OCEANIA (14)
+      ["Australia","Canberra","🇦🇺","Oceania","Australasia"],["Fiji","Suva","🇫🇯","Oceania","Melanesia"],
+      ["Kiribati","Tarawa","🇰🇮","Oceania","Micronesia"],["Marshall Islands","Majuro","🇲🇭","Oceania","Micronesia"],
+      ["Micronesia","Palikir","🇫🇲","Oceania","Micronesia"],["Nauru","Yaren","🇳🇷","Oceania","Micronesia"],
+      ["New Zealand","Wellington","🇳🇿","Oceania","Australasia / Polynesia"],["Palau","Ngerulmud","🇵🇼","Oceania","Micronesia"],
+      ["Papua New Guinea","Port Moresby","🇵🇬","Oceania","Melanesia"],["Samoa","Apia","🇼🇸","Oceania","Polynesia"],
+      ["Solomon Islands","Honiara","🇸🇧","Oceania","Melanesia"],["Tonga","Nuku'alofa","🇹🇴","Oceania","Polynesia"],
+      ["Tuvalu","Funafuti","🇹🇻","Oceania","Polynesia"],["Vanuatu","Port Vila","🇻🇺","Oceania","Melanesia"]
+    ];
+
+    function flagEmojiToIso(flag) {
+      const cps = Array.from(flag).map(ch => ch.codePointAt(0));
+      if (cps.length === 2 && cps[0] >= 0x1F1E6 && cps[1] >= 0x1F1E6) {
+        return String.fromCharCode(cps[0] - 0x1F1E6 + 97, cps[1] - 0x1F1E6 + 97);
+      }
+      return '';
+    }
+
+    const COUNTRIES = RAW_COUNTRIES.map(([country, capital, flag, continent, subregion], idx) => ({
+      id: idx,
+      country,
+      capital,
+      flag,
+      iso: flagEmojiToIso(flag),
+      continent,
+      subregion
+    }));
+
+    const ATLAS_NAME_ALIASES = {
+      "united states of america": "united states",
+      "dem rep congo": "dr congo",
+      "democratic republic of the congo": "dr congo",
+      "central african rep": "central african republic",
+      "s sudan": "south sudan",
+      "bosnia and herz": "bosnia and herzegovina",
+      "dominican rep": "dominican republic",
+      "eq guinea": "equatorial guinea",
+      "solomon is": "solomon islands",
+      "eswatini": "eswatini",
+      "swaziland": "eswatini",
+      "macedonia": "north macedonia",
+      "czech republic": "czechia",
+      "ivory coast": "cote divoire",
+      "cote divoire": "cote divoire",
+      "w sahara": "morocco",
+      "myanmar": "myanmar",
+      "burma": "myanmar",
+      "timor-leste": "timor leste",
+      "east timor": "timor leste",
+      "palestine": "palestine",
+      "west bank": "palestine",
+      "falkland is": "",
+      "greenland": "",
+      "antarctica": ""
+    };
+
+    function cleanMapName(name) {
+      return (name || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\./g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    async function loadWorldShapes() {
+      if (state.worldShapesReady) return true;
+      try {
+        const res = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json');
+        if (!res.ok) throw new Error('Network error');
+        const topo = await res.json();
+        const geo = topojson.feature(topo, topo.objects.countries);
+
+        const byName = {};
+        COUNTRIES.forEach(c => {
+          byName[cleanMapName(c.country)] = c;
+        });
+
+        geo.features.forEach(feat => {
+          const rawName = feat.properties && feat.properties.name ? feat.properties.name : '';
+          let cleaned = cleanMapName(rawName);
+          if (ATLAS_NAME_ALIASES[cleaned] !== undefined) {
+            cleaned = ATLAS_NAME_ALIASES[cleaned];
+          }
+          const match = byName[cleaned];
+          if (match && !state.shapeMap[match.id]) {
+            state.shapeMap[match.id] = feat;
+          }
+        });
+
+        state.worldShapesReady = true;
+        if (state.mode === 'shapes') {
+          buildNextQuestion('shapes');
+          renderActiveCard();
+        }
+        return true;
+      } catch (err) {
+        state.worldShapesFailed = true;
+        if (state.mode === 'shapes') {
+          renderActiveCard();
+        }
+        return false;
+      }
+    }
+
+    function renderCountryOutlineSvg(countryId) {
+      const feat = state.shapeMap[countryId];
+      if (!feat || typeof d3 === 'undefined') {
+        return `<div style="font-size:12px;opacity:0.7;">Loading outline...</div>`;
+      }
+      const centroid = d3.geoCentroid(feat);
+      const proj = d3.geoAzimuthalEqualArea()
+        .rotate([-centroid[0], -centroid[1]])
+        .fitExtent([[14, 14], [246, 166]], feat);
+      const pathGen = d3.geoPath().projection(proj);
+      const dStr = pathGen(feat) || '';
+      return `
+        <svg viewBox="0 0 260 180" class="shape-svg" aria-label="Country outline">
+          <path d="${dStr}" class="shape-path"></path>
+        </svg>
+      `;
+    }
+
+    function renderFlagHtml(c, sizeClass) {
+      const fallbackClass = sizeClass === 'flag-img-lg' ? 'flag-large' : '';
+      const fallbackStyle = sizeClass === 'flag-img-lg'
+        ? 'display:none;'
+        : sizeClass === 'flag-img-xs'
+        ? 'display:none;font-size:16px;'
+        : 'display:none;font-size:38px;line-height:1;';
+      if (!c || !c.iso) {
+        return `<span class="${fallbackClass}">${c ? c.flag : ''}</span>`;
+      }
+      const url = `https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/flags/4x3/${c.iso}.svg`;
+      return `<img src="${url}" alt="Flag" class="flag-img ${sizeClass}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block';" /><span class="${fallbackClass}" style="${fallbackStyle}">${c.flag}</span>`;
+    }
+
+    // =========================================================================
+    // MEMORY HOOKS & "CAPITAL TRAP" ALERTS
+    // =========================================================================
+    const MEMORY_HOOKS = {
+      "Australia": "Trap Alert: Not Sydney or Melbourne! Canberra was built inland as a compromise between the two.",
+      "New Zealand": "Trap Alert: Not Auckland! Wellington sits at the windy southern tip of the North Island.",
+      "Canada": "Trap Alert: Not Toronto or Montreal! Queen Victoria chose Ottawa on the Ontario–Quebec border.",
+      "Brazil": "Trap Alert: Not Rio or São Paulo! Brasília was purpose-built in the central highlands in 1960.",
+      "Bolivia": "Trap Alert: Sucre is the constitutional capital (while La Paz holds the seat of government).",
+      "United States": "Named after George Washington along the Potomac River between Maryland and Virginia.",
+      "Nigeria": "Trap Alert: Not coastal Lagos! Abuja was built in the geographic center in 1991.",
+      "Morocco": "Trap Alert: Not Casablanca or Marrakesh! Royal coastal Rabat is the capital.",
+      "Côte d'Ivoire": "Trap Alert: Not Abidjan! Yamoussoukro became the official capital in 1983.",
+      "Tanzania": "Trap Alert: Not coastal Dar es Salaam! Inland Dodoma is the official legislative capital.",
+      "South Africa": "Pretoria is the executive capital (with Cape Town legislative & Bloemfontein judicial).",
+      "Benin": "Trap Alert: Porto-Novo is the official capital, though Cotonou is the largest city.",
+      "Burundi": "Gitega replaced Bujumbura as the political capital in 2019.",
+      "Congo": "Brazzaville faces Kinshasa (DR Congo) directly across the Congo River!",
+      "DR Congo": "Kinshasa faces Brazzaville (Republic of the Congo) right across the Congo River!",
+      "Kenya": "Nairobi comes from the Maasai phrase for 'place of cool waters'.",
+      "Burkina Faso": "Ouagadougou ('Wah-gah-doo-goo') sits in the heart of West Africa just north of Ghana.",
+      "Madagascar": "Antananarivo ('City of the Thousand') sits high in the central highlands.",
+      "Senegal": "Dakar sits on the Cap-Vert peninsula—the westernmost point of mainland Africa.",
+      "Switzerland": "Trap Alert: Not Zurich or Geneva! Historic Bern is the federal city.",
+      "Turkey": "Trap Alert: Not Istanbul! Central Anatolian Ankara became capital in 1923.",
+      "Iceland": "'Reykja-vík' literally translates to 'Smoky Bay' from its geothermal steam.",
+      "Slovakia": "Don't confuse with Slovenia (Ljubljana)! Bratislava sits on the Danube bordering Austria.",
+      "Slovenia": "Don't confuse with Slovakia (Bratislava)! Ljubljana is in the Alpine-Adriatic valley.",
+      "Romania": "Don't confuse Bucharest (Romania) with Budapest (Hungary)!",
+      "Hungary": "Don't confuse Budapest (Buda + Pest on the Danube) with Bucharest (Romania)!",
+      "Latvia": "Baltic North-to-South order: Estonia (Tallinn), Latvia (Riga), Lithuania (Vilnius).",
+      "Estonia": "Northernmost Baltic state, just across the Gulf of Finland from Helsinki.",
+      "Lithuania": "Southernmost Baltic state; Vilnius is famous for its baroque old town.",
+      "India": "Trap Alert: Not Mumbai! New Delhi is the national capital territory.",
+      "Pakistan": "Trap Alert: Not Karachi or Lahore! Islamabad was purpose-built in the 1960s.",
+      "United Arab Emirates": "Trap Alert: Not Dubai! Abu Dhabi is the federal capital.",
+      "Myanmar": "Trap Alert: Not Yangon! Naypyidaw became the planned inland capital in 2005.",
+      "Kazakhstan": "Trap Alert: Not Almaty! Astana lies on the northern Ishim River steppe.",
+      "Sri Lanka": "Sri Jayawardenepura Kotte borders Colombo as the legislative capital.",
+      "Vietnam": "Trap Alert: Not Ho Chi Minh City (Saigon)! Northern Hanoi is the capital.",
+      "China": "Beijing literally means 'Northern Capital' (contrasting with Nanjing, 'Southern Capital').",
+      "Japan": "Tokyo means 'Eastern Capital' (renamed from Edo when the Emperor moved east from Kyoto)."
+    };
+
+    function getCoachingNote(c) {
+      if (MEMORY_HOOKS[c.country]) {
+        return `${c.subregion} • ${MEMORY_HOOKS[c.country]}`;
+      }
+      return `${c.subregion} (${c.continent}) • Anchor: "${c.country}" ↔ "${c.capital}" (starts with "${c.capital.slice(0, 2)}").`;
+    }
+
+    // =========================================================================
+    // TARGETED "CONFUSION TWINS" MAP
+    // =========================================================================
+    const CONFUSION_TWINS = {
+      "Slovakia": ["Slovenia", "Austria", "Czechia", "Hungary", "Poland"],
+      "Slovenia": ["Slovakia", "Croatia", "Austria", "Italy", "Hungary"],
+      "Hungary": ["Romania", "Bulgaria", "Austria", "Slovakia", "Serbia"],
+      "Romania": ["Hungary", "Bulgaria", "Moldova", "Ukraine", "Serbia"],
+      "Latvia": ["Lithuania", "Estonia", "Finland", "Belarus", "Poland"],
+      "Lithuania": ["Latvia", "Estonia", "Poland", "Belarus", "Russia"],
+      "Estonia": ["Finland", "Latvia", "Lithuania", "Sweden", "Russia"],
+      "Norway": ["Sweden", "Denmark", "Iceland", "Finland"],
+      "Sweden": ["Norway", "Finland", "Denmark", "Iceland"],
+      "Denmark": ["Norway", "Sweden", "Netherlands", "Germany", "Iceland"],
+      "Iceland": ["Norway", "Finland", "Denmark", "Sweden"],
+      "Switzerland": ["Austria", "Liechtenstein", "Germany", "France", "Italy"],
+      "Austria": ["Switzerland", "Germany", "Hungary", "Slovakia", "Slovenia"],
+      "Senegal": ["Mali", "Guinea", "Cameroon", "Gambia", "Mauritania"],
+      "Mali": ["Senegal", "Guinea", "Niger", "Burkina Faso", "Mauritania"],
+      "Guinea": ["Guinea-Bissau", "Mali", "Senegal", "Sierra Leone", "Liberia"],
+      "Guinea-Bissau": ["Guinea", "Gambia", "Senegal", "Cabo Verde"],
+      "Niger": ["Nigeria", "Mali", "Chad", "Burkina Faso", "Benin"],
+      "Nigeria": ["Niger", "Ghana", "Benin", "Cameroon", "Chad"],
+      "Congo": ["DR Congo", "Gabon", "Cameroon", "Central African Republic", "Angola"],
+      "DR Congo": ["Congo", "Rwanda", "Angola", "Burundi", "Uganda"],
+      "Zambia": ["Zimbabwe", "Malawi", "Botswana", "Mozambique", "Angola"],
+      "Zimbabwe": ["Zambia", "Mozambique", "Botswana", "South Africa", "Namibia"],
+      "Paraguay": ["Uruguay", "Bolivia", "Argentina", "Brazil", "Chile"],
+      "Uruguay": ["Paraguay", "Argentina", "Chile", "Brazil"],
+      "Guyana": ["Suriname", "Trinidad and Tobago", "Belize", "Venezuela", "Barbados"],
+      "Suriname": ["Guyana", "Belize", "Barbados", "Trinidad and Tobago", "Venezuela"],
+      "Iran": ["Iraq", "Syria", "Jordan", "Kuwait", "Turkey"],
+      "Iraq": ["Iran", "Syria", "Kuwait", "Jordan", "Saudi Arabia"],
+      "Kazakhstan": ["Uzbekistan", "Kyrgyzstan", "Turkmenistan", "Tajikistan", "Mongolia"],
+      "Uzbekistan": ["Kazakhstan", "Tajikistan", "Kyrgyzstan", "Turkmenistan", "Afghanistan"],
+      "Kyrgyzstan": ["Tajikistan", "Kazakhstan", "Uzbekistan", "Turkmenistan"],
+      "Tajikistan": ["Kyrgyzstan", "Turkmenistan", "Uzbekistan", "Kazakhstan", "Afghanistan"],
+      "Turkmenistan": ["Tajikistan", "Uzbekistan", "Kazakhstan", "Iran", "Azerbaijan"],
+      "Australia": ["New Zealand", "Fiji", "Papua New Guinea", "Solomon Islands", "Vanuatu"],
+      "New Zealand": ["Australia", "Samoa", "Fiji", "Tonga", "Vanuatu"]
+    };
+
+    function getSmartDistractors(target, count) {
+      const twinNames = CONFUSION_TWINS[target.country] || [];
+      const twinObjs = twinNames
+        .map(name => COUNTRIES.find(c => c.country === name))
+        .filter(Boolean);
+
+      const sameSub = COUNTRIES.filter(
+        c => c.subregion === target.subregion && c.id !== target.id && !twinNames.includes(c.country)
+      );
+      const sameCont = COUNTRIES.filter(
+        c => c.continent === target.continent && c.id !== target.id && c.subregion !== target.subregion && !twinNames.includes(c.country)
+      );
+
+      const combined = [...shuffle(twinObjs), ...shuffle(sameSub), ...shuffle(sameCont)];
+      return combined.slice(0, count);
+    }
+
+    // =========================================================================
+    // SPACED REPETITION & GAME STATE
+    // =========================================================================
+    const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
+    const ACTIVE_POOL_TARGET = 6;
+    const QUESTIONS_PER_ROUND = 10;
+
+    const state = {
+      theme: 'retro',
+      mode: 'learn',
+      mechanic: 'box1',
+      region: 'All',
+      soundEnabled: true,
+      bingeRound: 1,
+      streak: 0,
+      cardNumber: 1,
+      stepCount: 0,
+      cardAttempted: false,
+      questionStartTime: Date.now(),
+      showingRoundSummary: false,
+      roundStats: {
+        firstTryCorrect: 0,
+        totalCards: 0,
+        promoted: [],
+        missedCountries: [],
+        requeuedCleared: []
+      },
+      requeueList: [],
+      progress: {},
+      worldShapesReady: false,
+      worldShapesFailed: false,
+      shapeMap: {},           // country.id -> GeoJSON feature
+      currentQuestion: null,
+      typedInput: '',
+      triviaFound: [],
+      triviaHintUsed: false
+    };
+
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem('geo_quest_srs_v2');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.progress) {
+            state.progress = parsed.progress;
+            state.bingeRound = parsed.bingeRound || 1;
+            state.streak = parsed.streak || 0;
+            state.theme = parsed.theme || 'retro';
+          }
+        }
+      } catch (e) {}
+      replenishActivePool();
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem('geo_quest_srs_v2', JSON.stringify({
+          progress: state.progress,
+          bingeRound: state.bingeRound,
+          streak: state.streak,
+          theme: state.theme
+        }));
+      } catch (e) {}
+    }
+
+    function resetAllProgress() {
+      state.progress = {};
+      state.bingeRound = 1;
+      state.streak = 0;
+      state.cardNumber = 1;
+      state.requeueList = [];
+      state.showingRoundSummary = false;
+      resetRoundStats();
+      replenishActivePool();
+      saveProgress();
+      buildNextQuestion();
+      renderActiveCard();
+    }
+
+    function resetRoundStats() {
+      state.roundStats = {
+        firstTryCorrect: 0,
+        totalCards: 0,
+        promoted: [],
+        missedCountries: [],
+        requeuedCleared: []
+      };
+    }
+
+    function getRegionPool() {
+      return state.region === 'All'
+        ? COUNTRIES
+        : COUNTRIES.filter(c => c.continent === state.region);
+    }
+
+    function replenishActivePool() {
+      const pool = getRegionPool();
+      let activeCount = 0;
+      pool.forEach(c => {
+        const p = state.progress[c.id];
+        if (p && p.capBox <= 2) activeCount++;
+      });
+
+      if (activeCount < ACTIVE_POOL_TARGET) {
+        const unseen = pool.filter(c => !state.progress[c.id]);
+        const needed = ACTIVE_POOL_TARGET - activeCount;
+        for (let i = 0; i < Math.min(needed, unseen.length); i++) {
+          const item = unseen[i];
+          state.progress[item.id] = {
+            capBox: 1,
+            capStreak: 0,
+            capDueRound: state.bingeRound,
+            flagBox: 1,
+            flagStreak: 0,
+            flagDueRound: state.bingeRound
+          };
+        }
+      }
+      updateBoxStatsUI();
+    }
+
+    function updateBoxStatsUI() {
+      const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      const pool = getRegionPool();
+      pool.forEach(c => {
+        const p = state.progress[c.id];
+        if (p && counts[p.capBox] !== undefined) counts[p.capBox]++;
+      });
+      for (let b = 1; b <= 5; b++) {
+        const el = document.getElementById('statB' + b);
+        if (el) el.textContent = counts[b];
+      }
+      const retrySuffix = state.requeueList.length > 0 ? ` (+${state.requeueList.length} Retry)` : '';
+      const lbl = document.getElementById('progressLabel');
+      if (lbl) lbl.textContent = `Card ${Math.min(state.cardNumber, QUESTIONS_PER_ROUND)}/${QUESTIONS_PER_ROUND}${retrySuffix}`;
+      const fill = document.getElementById('progressFill');
+      if (fill) fill.style.width = `${Math.min(100, (state.cardNumber / QUESTIONS_PER_ROUND) * 100)}%`;
+      const rd = document.getElementById('roundReadout');
+      if (rd) rd.textContent = `RD ${String(state.bingeRound).padStart(2, '0')}`;
+      const st = document.getElementById('hudStreak');
+      if (st) st.textContent = `🔥 ${state.streak}`;
+    }
+
+    // =========================================================================
+    // SOUND SYNTHESIZER
+    // =========================================================================
+    let audioCtx = null;
+    function playTone(type) {
+      if (!state.soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AudioContextClass();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = state.theme === 'retro' ? 'square' : 'triangle';
+
+        if (type === 'correct') {
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.06);
+          osc.frequency.setValueAtTime(783.99, now + 0.12);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.28);
+        } else if (type === 'wrong') {
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.setValueAtTime(164.81, now + 0.09);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+          osc.start(now);
+          osc.stop(now + 0.24);
+        } else if (type === 'click') {
+          osc.frequency.setValueAtTime(660, now);
+          gain.gain.setValueAtTime(0.03, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        }
+      } catch (e) {}
+    }
+
+    function toggleSound() {
+      state.soundEnabled = !state.soundEnabled;
+      const btn = document.getElementById('btnSoundToggle');
+      if (btn) btn.textContent = state.soundEnabled ? '🔊 SFX: ON' : '🔇 SFX: OFF';
+      if (state.soundEnabled) playTone('click');
+    }
+
+    // =========================================================================
+    // FUZZY STRING UTILITIES
+    // =========================================================================
+    function normalizeStr(s) {
+      return (s || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, '')
+        .trim();
+    }
+
+    function levenshtein(a, b) {
+      const m = a.length, n = b.length;
+      const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+        }
+      }
+      return dp[m][n];
+    }
+
+    function shuffle(arr) {
+      const copy = arr.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    // =========================================================================
+    // QUESTION GENERATOR
+    // =========================================================================
+    const TRIVIA_CHALLENGES = [
+      {
+        continent: 'Africa',
+        letter: 'A',
+        prompt: '3 AFRICAN COUNTRIES WITH AN "A" CAPITAL',
+        filterFn: c => c.continent === 'Africa' && c.capital.toUpperCase().startsWith('A')
+      },
+      {
+        continent: 'Europe',
+        letter: 'B',
+        prompt: '3 EUROPEAN COUNTRIES WITH A "B" CAPITAL',
+        filterFn: c => c.continent === 'Europe' && c.capital.toUpperCase().startsWith('B')
+      },
+      {
+        continent: 'Asia',
+        letter: 'D',
+        prompt: '3 ASIAN COUNTRIES WITH A "D" CAPITAL',
+        filterFn: c => c.continent === 'Asia' && c.capital.toUpperCase().startsWith('D')
+      },
+      {
+        continent: 'Americas',
+        letter: 'S',
+        prompt: '3 AMERICAS COUNTRIES WITH AN "S" CAPITAL',
+        filterFn: c => c.continent === 'Americas' && c.capital.toUpperCase().startsWith('S')
+      },
+      {
+        continent: 'World',
+        letter: 'SAME',
+        prompt: '3 COUNTRIES WHOSE CAPITAL STARTS WITH THE SAME LETTER',
+        filterFn: c => c.country[0].toUpperCase() === c.capital[0].toUpperCase()
+      }
+    ];
+
+    function buildNextQuestion(forceType) {
+      replenishActivePool();
+      const pool = getRegionPool();
+      state.cardAttempted = false;
+      state.questionStartTime = Date.now();
+      state.typedInput = '';
+      state.triviaFound = [];
+      state.triviaHintUsed = false;
+      state.stepCount += 1;
+
+      // In-round re-queue check
+      if (!forceType && state.requeueList.length > 0) {
+        const dueIdx = state.requeueList.findIndex(
+          item => item.dueStep <= state.stepCount || state.cardNumber > QUESTIONS_PER_ROUND
+        );
+        if (dueIdx !== -1) {
+          const retryItem = state.requeueList.splice(dueIdx, 1)[0];
+          const target = retryItem.countryObj;
+
+          if (retryItem.kind === 'shapeOutline' && state.shapeMap[target.id]) {
+            const distractors = getSmartDistractors(target, 3);
+            state.currentQuestion = {
+              kind: 'shapeOutline',
+              isRetry: true,
+              countryObj: target,
+              choices: shuffle([target.country, ...distractors.map(d => d.country)])
+            };
+            state.mechanic = 'shapes';
+            return;
+          } else if (retryItem.kind === 'flagGrid') {
+            const flagCount = retryItem.flagCount || 4;
+            const distractors = getSmartDistractors(target, flagCount - 1);
+            state.currentQuestion = {
+              kind: 'flagGrid',
+              isRetry: true,
+              countryObj: target,
+              box: 2,
+              flagCount,
+              options: shuffle([target, ...distractors])
+            };
+            state.mechanic = 'box3flag';
+            return;
+          } else {
+            const distractors = getSmartDistractors(target, 3);
+            state.currentQuestion = {
+              kind: 'mcCapital',
+              isRetry: true,
+              direction: 'countryToCap',
+              countryObj: target,
+              box: 1,
+              showFlag: true,
+              choices: shuffle([target.capital, ...distractors.map(d => d.capital)])
+            };
+            state.mechanic = 'box1';
+            return;
+          }
+        }
+      }
+
+      // 1. Dedicated SHAPES Mode (Country Outline)
+      if (state.mode === 'shapes' || forceType === 'shapes') {
+        if (!state.worldShapesReady) {
+          state.currentQuestion = { kind: 'shapesLoading' };
+          state.mechanic = 'shapes';
+          loadWorldShapes();
+          return;
+        }
+        const shapePool = pool.filter(c => Boolean(state.shapeMap[c.id]));
+        const usablePool = shapePool.length >= 4 ? shapePool : COUNTRIES.filter(c => Boolean(state.shapeMap[c.id]));
+        const target = usablePool[Math.floor(Math.random() * usablePool.length)];
+        const distractors = getSmartDistractors(target, 3);
+        state.currentQuestion = {
+          kind: 'shapeOutline',
+          isRetry: false,
+          countryObj: target,
+          choices: shuffle([target.country, ...distractors.map(d => d.country)])
+        };
+        state.mechanic = 'shapes';
+        return;
+      }
+
+      // 1b. Legacy TRIVIA Mode (hidden)
+      if (state.mode === 'trivia' || forceType === 'trivia') {
+        const ch = TRIVIA_CHALLENGES[(state.cardNumber - 1) % TRIVIA_CHALLENGES.length];
+        state.currentQuestion = {
+          kind: 'trivia',
+          challenge: ch,
+          validMatches: COUNTRIES.filter(ch.filterFn)
+        };
+        state.mechanic = 'trivia';
+        return;
+      }
+
+      // 2. Dedicated FLAGS Mode or Forced Flag Grid (Upgrades from 4 to 6 flags as level increases)
+      if (state.mode === 'flags' || forceType === 'box3flag') {
+        const target = pool[Math.floor(Math.random() * pool.length)];
+        const p = state.progress[target.id] || { flagBox: 2 };
+        const flagBox = p.flagBox || 2;
+        // 4 flags at Level 1-2, 6 flags at Level 3+
+        const flagCount = flagBox >= 3 ? 6 : 4;
+        const distractors = getSmartDistractors(target, flagCount - 1);
+
+        state.currentQuestion = {
+          kind: 'flagGrid',
+          isRetry: false,
+          countryObj: target,
+          box: flagBox,
+          flagCount,
+          options: shuffle([target, ...distractors])
+        };
+        state.mechanic = 'box3flag';
+        return;
+      }
+
+      // 3. Forced Typed Recall
+      if (forceType === 'box4type') {
+        const target = pool[Math.floor(Math.random() * pool.length)];
+        state.currentQuestion = {
+          kind: 'typedCapital',
+          isRetry: false,
+          direction: 'countryToCap',
+          countryObj: target,
+          box: 4
+        };
+        state.mechanic = 'box4type';
+        return;
+      }
+
+      // 4. Standard LEARN Mode (Spaced Repetition Queue)
+      const activeIds = Object.keys(state.progress).map(Number).filter(id => {
+        const c = COUNTRIES[id];
+        return state.region === 'All' || c.continent === state.region;
+      });
+
+      const dueFlags = activeIds.filter(id => {
+        const p = state.progress[id];
+        return p.capBox >= 3 && p.flagBox <= 3 && p.flagDueRound <= state.bingeRound;
+      });
+      if (dueFlags.length > 0 && Math.random() < 0.3) {
+        const pickId = dueFlags[Math.floor(Math.random() * dueFlags.length)];
+        const target = COUNTRIES[pickId];
+        const p = state.progress[target.id] || { flagBox: 3 };
+        const flagBox = p.flagBox || 3;
+        const flagCount = flagBox >= 3 ? 6 : 4;
+        const distractors = getSmartDistractors(target, flagCount - 1);
+        state.currentQuestion = {
+          kind: 'flagGrid',
+          isRetry: false,
+          countryObj: target,
+          box: flagBox,
+          flagCount,
+          options: shuffle([target, ...distractors])
+        };
+        state.mechanic = 'box3flag';
+        return;
+      }
+
+      let dueCaps = activeIds.filter(id => state.progress[id].capDueRound <= state.bingeRound);
+      if (dueCaps.length === 0) dueCaps = activeIds.slice();
+      dueCaps.sort((a, b) => state.progress[a].capBox - state.progress[b].capBox);
+
+      const chosenId = dueCaps[Math.floor(Math.random() * Math.min(3, dueCaps.length))];
+      const target = COUNTRIES[chosenId] || pool[0];
+      const p = state.progress[target.id] || { capBox: 1 };
+
+      const useReverse = (p.capBox === 2 || p.capBox === 3 || p.capBox === 5) && (state.stepCount % 2 === 0);
+      const direction = useReverse ? 'capToCountry' : 'countryToCap';
+
+      if (p.capBox >= 4) {
+        state.currentQuestion = {
+          kind: 'typedCapital',
+          isRetry: false,
+          direction,
+          countryObj: target,
+          box: p.capBox
+        };
+        state.mechanic = 'box4type';
+      } else {
+        const distractors = getSmartDistractors(target, 3);
+        const choices = direction === 'capToCountry'
+          ? shuffle([target.country, ...distractors.map(d => d.country)])
+          : shuffle([target.capital, ...distractors.map(d => d.capital)]);
+
+        state.currentQuestion = {
+          kind: 'mcCapital',
+          isRetry: false,
+          direction,
+          countryObj: target,
+          box: p.capBox,
+          showFlag: p.capBox <= 2,
+          choices
+        };
+        state.mechanic = 'box1';
+      }
+    }
+
+    // =========================================================================
+    // RENDER CARD, CONTROLS & CLEAN ROUND CHECKPOINT
+    // =========================================================================
+    function renderActiveCard() {
+      const cardEl = document.getElementById('questionCard');
+      const answerEl = document.getElementById('answerArea');
+      if (!cardEl || !answerEl) return;
+
+      updateBoxStatsUI();
+
+      // Clean End-of-Round Summary
+      if (state.showingRoundSummary) {
+        const rs = state.roundStats;
+        const promotedText = rs.promoted.length > 0
+          ? rs.promoted.join(', ')
+          : 'None this round';
+        const missedText = rs.missedCountries.length > 0
+          ? rs.missedCountries.join(', ')
+          : 'None this round';
+
+        cardEl.innerHTML = `
+          <div id="boxBadge" style="font-size:11px;color:#fbbf24;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">
+            ★ ROUND ${state.bingeRound} COMPLETE ★
+          </div>
+          <div class="title-font" style="font-size:24px;font-weight:700;margin-bottom:10px;">
+            ${rs.firstTryCorrect} / ${rs.totalCards || QUESTIONS_PER_ROUND} FIRST-TRY
+          </div>
+          <div class="summary-row">
+            <strong style="color:#34d399;">▲ Mastered:</strong> ${promotedText}
+          </div>
+          <div class="summary-row">
+            <strong style="color:#fb7185;">↺ Re-Queued:</strong> ${missedText}
+          </div>
+          <div style="margin-top:10px;text-align:right;">
+            <button onclick="toggleSummaryRules()" style="background:none;border:none;color:inherit;font-size:11px;opacity:0.8;text-decoration:underline;padding:0;display:inline-flex;align-items:center;gap:4px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid currentColor;font-size:10px;font-weight:700;">?</span>
+              <span>How advancing &amp; re-queuing work</span>
+            </button>
+          </div>
+          <div id="summaryRulesBox" class="summary-row hidden" style="margin-top:6px;font-size:11px;line-height:1.45;">
+            <div><strong>▲ Advancing:</strong> Get an item right <strong>2 times in a row</strong> to move up 1 level, or answer in under <strong>2.5s</strong> (4s typed) for a <strong>⚡ +2 level jump</strong>!</div>
+            <div style="margin-top:4px;"><strong>↺ Re-Queuing:</strong> Missing an item resets its streak and tests it again <strong>3 cards later</strong> in the same round.</div>
+          </div>
+        `;
+
+        answerEl.innerHTML = `
+          <button onclick="startNextRoundFromSummary()" class="btn-choice choice-row-btn" style="justify-content:center;background:#fbbf24;color:#0f172a;border-color:#d97706;">
+            <span>START ROUND ${state.bingeRound + 1} ►</span>
+          </button>
+        `;
+        return;
+      }
+
+      if (!state.currentQuestion) buildNextQuestion();
+      const q = state.currentQuestion;
+
+      // 1. Multiple Choice (Clean subregion header, no "BOX" word)
+      if (q.kind === 'mcCapital') {
+        const c = q.countryObj;
+        const retryTag = q.isRetry ? `<span style="color:#fb7185;font-weight:700;">[↺ RE-TRY] </span>` : '';
+        const flagHtml = q.showFlag
+          ? renderFlagHtml(c, 'flag-img-lg')
+          : `<div style="font-size:11px;opacity:0.55;margin-bottom:8px;">[ FLAG HIDDEN ]</div>`;
+
+        const promptLabel = q.direction === 'capToCountry' ? 'WHICH COUNTRY HAS CAPITAL' : 'CAPITAL OF';
+        const promptMain = q.direction === 'capToCountry' ? c.capital.toUpperCase() : c.country.toUpperCase();
+
+        cardEl.innerHTML = `
+          <div id="boxBadge" style="font-size:11px;opacity:0.75;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px;">
+            ${retryTag}${c.subregion.toUpperCase()}
+          </div>
+          ${flagHtml}
+          <div style="font-size:12px;opacity:0.65;margin-bottom:4px;">${promptLabel}</div>
+          <div class="title-font" style="font-size:25px;font-weight:700;">${promptMain}</div>
+          <div id="stampOverlaySpot" style="margin-top:8px;"></div>
+        `;
+
+        answerEl.innerHTML = `
+          <div class="choices-list" id="mcChoicesContainer">
+            ${q.choices.map((choice, idx) => `
+              <button id="mcBtn_${idx}" data-choice="${choice.replace(/"/g, '&quot;')}"
+                onclick="handleBox1Answer('${choice.replace(/'/g, "\\'")}')"
+                class="btn-choice choice-row-btn">
+                <span>${choice}</span>
+                <span class="choice-indicator" style="opacity:0.5;">►</span>
+              </button>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // 2. Standalone Flag Grid (Clean Subregion Header without redundant "Flag Drill"; 4 or 6 flags)
+      else if (q.kind === 'flagGrid') {
+        const c = q.countryObj;
+        const retryTag = q.isRetry ? `<span style="color:#fb7185;font-weight:700;">[↺ RE-TRY] </span>` : '';
+        const gridClass = q.flagCount === 6 ? 'flag-grid-6' : 'flag-grid-4';
+        const flagImgSize = q.flagCount === 6 ? 'flag-img-sm' : 'flag-img-md';
+
+        cardEl.innerHTML = `
+          <div id="boxBadge" style="font-size:11px;opacity:0.75;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">
+            ${retryTag}${c.subregion.toUpperCase()}
+          </div>
+          <div style="font-size:12px;opacity:0.65;margin-bottom:4px;">SELECT FLAG FOR</div>
+          <div class="title-font" style="font-size:25px;font-weight:700;">${c.country.toUpperCase()}</div>
+        `;
+
+        answerEl.innerHTML = `
+          <div class="flag-grid-container ${gridClass}" id="flagGridContainer">
+            ${q.options.map((opt, idx) => `
+              <button id="flagBtn_${idx}" data-country="${opt.country.replace(/"/g, '&quot;')}"
+                onclick="handleFlagGridAnswer('${opt.country.replace(/'/g, "\\'")}')"
+                class="btn-choice flag-grid-btn">
+                ${renderFlagHtml(opt, flagImgSize)}
+                <span class="flag-label" style="font-size:11px;opacity:0.85;margin-top:4px;display:none;"></span>
+              </button>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // 3. Typed Recall
+      else if (q.kind === 'typedCapital') {
+        const c = q.countryObj;
+        const promptLabel = q.direction === 'capToCountry' ? 'TYPE COUNTRY FOR CAPITAL' : 'TYPE CAPITAL OF';
+        const promptMain = q.direction === 'capToCountry' ? c.capital.toUpperCase() : c.country.toUpperCase();
+
+        cardEl.innerHTML = `
+          <div id="boxBadge" style="font-size:11px;opacity:0.75;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">
+            TYPED RECALL • ${c.subregion.toUpperCase()}
+          </div>
+          <div style="font-size:12px;opacity:0.65;margin-bottom:4px;">${promptLabel}</div>
+          <div class="title-font" style="font-size:25px;font-weight:700;">${promptMain}</div>
+        `;
+
+        answerEl.innerHTML = `
+          <div>
+            <div id="autocompleteChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px;margin-bottom:8px;"></div>
+            <div class="text-input-row">
+              <input id="fuzzyInputBox" type="text"
+                value="${state.typedInput}"
+                oninput="handleTypedInput(this.value)"
+                onkeydown="if(event.key==='Enter') submitTypedAnswer()"
+                placeholder="${q.direction === 'capToCountry' ? 'Type country...' : 'Type capital...'}"
+                class="game-input" />
+              <button id="btnTypedSubmit" onclick="submitTypedAnswer()" class="btn-choice" style="padding:10px 16px;flex-shrink:0;">
+                OK
+              </button>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.75;margin-top:8px;">
+              <span>1–2 letter typos &amp; accents forgiven</span>
+              <button onclick="fillSampleTypo()" style="background:none;border:none;color:inherit;text-decoration:underline;padding:0;">
+                Hint (1st 3 letters)
+              </button>
+            </div>
+          </div>
+        `;
+        updateAutocompleteChips(state.typedInput);
+      }
+
+      // 3b. Country Outline (Shapes Mode)
+      else if (q.kind === 'shapesLoading') {
+        const msg = state.worldShapesFailed
+          ? 'Could not load map outlines (check internet connection).'
+          : 'Loading world map outlines...';
+        cardEl.innerHTML = `
+          <div id="boxBadge" style="font-size:11px;opacity:0.65;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">
+            COUNTRY OUTLINES
+          </div>
+          <div style="padding:36px 10px;font-size:13px;opacity:0.85;">${msg}</div>
+        `;
+        answerEl.innerHTML = state.worldShapesFailed
+          ? `<button onclick="state.worldShapesFailed=false;loadWorldShapes();" class="btn-choice choice-row-btn" style="justify-content:center;">Retry Loading Map</button>`
+          : '';
+      }
+      else if (q.kind === 'shapeOutline') {
+        const c = q.countryObj;
+        const retryTag = q.isRetry ? `<span style="color:#fb7185;font-weight:700;">[↺ RE-TRY] </span>` : '';
+        cardEl.innerHTML = `
+          <div id="boxBadge" style="font-size:11px;opacity:0.75;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">
+            ${retryTag}${c.subregion.toUpperCase()}
+          </div>
+          <div class="shape-box">
+            ${renderCountryOutlineSvg(c.id)}
+          </div>
+          <div style="font-size:12px;opacity:0.65;">WHICH COUNTRY IS THIS?</div>
+        `;
+
+        answerEl.innerHTML = `
+          <div class="choices-list" id="mcChoicesContainer">
+            ${q.choices.map((choice, idx) => `
+              <button id="mcBtn_${idx}" data-choice="${choice.replace(/"/g, '&quot;')}"
+                onclick="handleShapeAnswer('${choice.replace(/'/g, "\'")}')"
+                class="btn-choice choice-row-btn">
+                <span>${choice}</span>
+                <span class="choice-indicator" style="opacity:0.5;">►</span>
+              </button>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // 4. Synthesis Trivia Challenge
+      else if (q.kind === 'trivia') {
+        const ch = q.challenge;
+        const slotsHtml = [0, 1, 2].map(idx => {
+          const found = state.triviaFound[idx];
+          if (found) {
+            return `
+              <div class="trivia-slot solved">
+                <span>✓ ${renderFlagHtml(found, 'flag-img-xs')}${found.country}</span>
+                <span>${found.capital}</span>
+              </div>
+            `;
+          }
+          return `
+            <div class="trivia-slot">
+              <span>#${idx + 1} Country</span>
+              <span>Capital: ${ch.letter === 'SAME' ? 'Same Initial' : ch.letter + '___'}</span>
+            </div>
+          `;
+        }).join('');
+
+        const sampleHints = q.validMatches.slice(0, 6).map(m => m.capital.slice(0, 3) + '___').join(', ');
+        const remainingHint = state.triviaHintUsed
+          ? `<div style="margin-top:10px;font-size:11px;color:#fbbf24;">Capital prefixes: ${sampleHints}</div>`
+          : '';
+
+        cardEl.innerHTML = `
+          <div id="boxBadge" style="font-size:11px;opacity:0.75;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">
+            SYNTHESIS TRIVIA • ${ch.continent.toUpperCase()}
+          </div>
+          <div class="title-font" style="font-size:17px;font-weight:700;line-height:1.35;">
+            ${ch.prompt}
+          </div>
+          <div style="margin-top:12px;text-align:left;">
+            ${slotsHtml}
+          </div>
+          ${remainingHint}
+        `;
+
+        const samplePicks = q.validMatches.slice(0, 3).map(m => m.country);
+        answerEl.innerHTML = `
+          <div>
+            <div class="text-input-row">
+              <input id="triviaInputBox" type="text"
+                onkeydown="if(event.key==='Enter') submitTriviaSlot()"
+                placeholder="Type country name..."
+                class="game-input" />
+              <button onclick="submitTriviaSlot()" class="btn-choice" style="padding:10px 16px;flex-shrink:0;">
+                ADD
+              </button>
+            </div>
+            <div style="font-size:11px;opacity:0.85;display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;">
+              ${samplePicks.map(p => `
+                <button onclick="quickPickTrivia('${p.replace(/'/g, "\\'")}')"
+                  style="padding:4px 8px;border:1px solid currentColor;background:transparent;color:inherit;">
+                  +${p}
+                </button>
+              `).join('')}
+              <button onclick="toggleTriviaHint()" style="margin-left:auto;background:none;border:none;color:inherit;text-decoration:underline;font-weight:700;padding:0;">
+                Hint
+              </button>
+              <button onclick="revealAllAfricaA()" style="background:none;border:none;color:inherit;text-decoration:underline;opacity:0.8;padding:0;">
+                Reveal All
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // =========================================================================
+    // GRADING & LEVEL UPDATES
+    // =========================================================================
+    function promoteCapital(countryId, isCorrect, isRetry, elapsedMs, isTyped) {
+      if (!state.progress[countryId]) {
+        state.progress[countryId] = {
+          capBox: 1, capStreak: 0, capDueRound: state.bingeRound,
+          flagBox: 1, flagStreak: 0, flagDueRound: state.bingeRound
+        };
+      }
+      const p = state.progress[countryId];
+      const prevBox = p.capBox;
+      let speedTier = 'normal'; // 'fast' | 'normal' | 'slow'
+
+      const fastLimit = isTyped ? 4000 : 2500;
+      const slowLimit = isTyped ? 12000 : 8000;
+
+      if (isCorrect) {
+        if (isRetry) {
+          p.capBox = 1;
+          p.capStreak = 1;
+          p.capDueRound = state.bingeRound + 1;
+        } else if (elapsedMs && elapsedMs < fastLimit) {
+          speedTier = 'fast';
+          p.capBox = Math.min(5, p.capBox + 2);
+          p.capStreak = 0;
+          const cName = COUNTRIES[countryId].country;
+          const levelLabel = p.capBox === 5 ? `${cName} (Mastered)` : `${cName} (Level ${p.capBox})`;
+          if (!state.roundStats.promoted.includes(levelLabel)) {
+            state.roundStats.promoted.push(levelLabel);
+          }
+          if (p.capBox >= 3 && p.flagBox < 3) {
+            p.flagBox = 3;
+            p.flagDueRound = state.bingeRound + 1;
+          }
+          p.capDueRound = state.bingeRound + (BOX_INTERVALS_ROUNDS[p.capBox] || 1);
+        } else if (elapsedMs && elapsedMs > slowLimit) {
+          speedTier = 'slow';
+          p.capStreak = 0; // Hesitant recall: keep at current level for one more reinforcement
+          p.capDueRound = state.bingeRound + 1;
+        } else {
+          p.capStreak += 1;
+          if (p.capStreak >= 2 && p.capBox < 5) {
+            p.capBox += 1;
+            p.capStreak = 0;
+            const cName = COUNTRIES[countryId].country;
+            const levelLabel = p.capBox === 5 ? `${cName} (Mastered)` : `${cName} (Level ${p.capBox})`;
+            if (!state.roundStats.promoted.includes(levelLabel)) {
+              state.roundStats.promoted.push(levelLabel);
+            }
+            if (p.capBox === 3 && p.flagBox < 3) {
+              p.flagBox = 3;
+              p.flagDueRound = state.bingeRound + 1;
+            }
+          }
+          p.capDueRound = state.bingeRound + (BOX_INTERVALS_ROUNDS[p.capBox] || 1);
+        }
+      } else {
+        p.capBox = 1;
+        p.capStreak = 0;
+        p.capDueRound = state.bingeRound;
+      }
+      replenishActivePool();
+      saveProgress();
+      return { prevBox, newBox: p.capBox, speedTier };
+    }
+
+    function queueMissedItemForRetry(countryObj, kind, flagCount) {
+      const alreadyQueued = state.requeueList.some(r => r.countryObj.id === countryObj.id && r.kind === kind);
+      if (!alreadyQueued) {
+        state.requeueList.push({
+          countryObj,
+          kind,
+          flagCount: flagCount || 4,
+          dueStep: state.stepCount + 3
+        });
+      }
+      if (!state.roundStats.missedCountries.includes(countryObj.country)) {
+        state.roundStats.missedCountries.push(countryObj.country);
+      }
+    }
+
+    function lockMcButtons(selectedChoice, correctChoice) {
+      const container = document.getElementById('mcChoicesContainer');
+      if (!container) return;
+      const buttons = container.querySelectorAll('button');
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        const val = btn.getAttribute('data-choice');
+        const ind = btn.querySelector('.choice-indicator');
+        if (val === correctChoice) {
+          btn.classList.add('locked-correct');
+          if (ind) { ind.textContent = '✓'; ind.style.opacity = '1'; }
+        } else if (val === selectedChoice) {
+          btn.classList.add('locked-wrong');
+          if (ind) { ind.textContent = '✗'; ind.style.opacity = '1'; }
+        } else {
+          btn.classList.add('locked-dim');
+        }
+      });
+    }
+
+    function lockFlagButtons(selectedCountry, correctCountry) {
+      const container = document.getElementById('flagGridContainer');
+      if (!container) return;
+      const buttons = container.querySelectorAll('button');
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        const val = btn.getAttribute('data-country');
+        const lbl = btn.querySelector('.flag-label');
+        if (lbl) lbl.style.display = 'inline-block';
+        if (val === correctCountry) {
+          btn.classList.add('locked-correct');
+          if (lbl) { lbl.textContent = `✓ ${val}`; lbl.style.opacity = '1'; }
+        } else if (val === selectedCountry) {
+          btn.classList.add('locked-wrong');
+          if (lbl) { lbl.textContent = `✗ ${val}`; lbl.style.opacity = '1'; }
+        } else {
+          btn.classList.add('locked-dim');
+          if (lbl) lbl.textContent = val;
+        }
+      });
+    }
+
+    function handleBox1Answer(selected) {
+      if (state.cardAttempted) return;
+      state.cardAttempted = true;
+
+      const q = state.currentQuestion;
+      if (!q || !q.countryObj) return;
+      const c = q.countryObj;
+      const expected = q.direction === 'capToCountry' ? c.country : c.capital;
+      const isCorrect = selected === expected;
+
+      const elapsedMs = Date.now() - state.questionStartTime;
+      lockMcButtons(selected, expected);
+      const res = promoteCapital(c.id, isCorrect, q.isRetry, elapsedMs, false);
+
+      if (!q.isRetry) {
+        state.roundStats.totalCards += 1;
+        if (isCorrect) state.roundStats.firstTryCorrect += 1;
+      }
+
+      if (isCorrect) {
+        playTone('correct');
+        state.streak += 1;
+        if (state.theme === 'airmail') {
+          const spot = document.getElementById('stampOverlaySpot');
+          if (spot) spot.innerHTML = `<span class="ink-stamp">✓ STAMPED: ${expected}</span>`;
+        }
+        const speedBadge = res.speedTier === 'fast' ? '⚡ Fast Recall (+2 Levels)! ' : '';
+        showFeedback(true, `${speedBadge}CORRECT: ${c.country} — ${c.capital}`, getCoachingNote(c));
+      } else {
+        playTone('wrong');
+        state.streak = 0;
+        queueMissedItemForRetry(c, 'mcCapital');
+        showFeedback(
+          false,
+          `LOCKED AS MISSED • Answer: ${expected}`,
+          `${getCoachingNote(c)} (Re-queued to test again in 3 cards!)`
+        );
+      }
+      updateBoxStatsUI();
+    }
+
+    // Flag Feedback in Clean Bullet-Point Format with Capital Name Included
+    function handleShapeAnswer(countryPicked) {
+      if (state.cardAttempted) return;
+      state.cardAttempted = true;
+
+      const q = state.currentQuestion;
+      if (!q || !q.countryObj) return;
+      const c = q.countryObj;
+      const isCorrect = countryPicked === c.country;
+
+      lockMcButtons(countryPicked, c.country);
+
+      if (!q.isRetry) {
+        state.roundStats.totalCards += 1;
+        if (isCorrect) state.roundStats.firstTryCorrect += 1;
+      }
+
+      const elapsedMs = Date.now() - state.questionStartTime;
+      if (isCorrect) {
+        playTone('correct');
+        state.streak += 1;
+        const speedNote = (!q.isRetry && elapsedMs < 2500) ? '⚡ FAST RECALL! ' : '';
+        const bulletsHtml = `
+          <ul class="feedback-bullet-list">
+            <li><strong>Country:</strong> ${renderFlagHtml(c, 'flag-img-xs')}${c.country}</li>
+            <li><strong>Capital:</strong> ${c.capital}</li>
+            <li><strong>Region:</strong> ${c.subregion} (${c.continent})</li>
+          </ul>
+        `;
+        showFeedback(true, `${speedNote}CORRECT!`, bulletsHtml);
+      } else {
+        playTone('wrong');
+        state.streak = 0;
+        queueMissedItemForRetry(c, 'shapeOutline');
+        const bulletsHtml = `
+          <ul class="feedback-bullet-list">
+            <li><strong>Country:</strong> ${renderFlagHtml(c, 'flag-img-xs')}${c.country}</li>
+            <li><strong>Capital:</strong> ${c.capital}</li>
+            <li><strong>Next step:</strong> Re-queued to test again in 3 cards!</li>
+          </ul>
+        `;
+        showFeedback(false, `LOCKED AS MISSED`, bulletsHtml);
+      }
+      updateBoxStatsUI();
+    }
+
+    function handleFlagGridAnswer(countryPicked) {
+      if (state.cardAttempted) return;
+      state.cardAttempted = true;
+
+      const q = state.currentQuestion;
+      if (!q || !q.countryObj) return;
+      const c = q.countryObj;
+      const isCorrect = countryPicked === c.country;
+
+      lockFlagButtons(countryPicked, c.country);
+
+      if (!state.progress[c.id]) {
+        state.progress[c.id] = {
+          capBox: 1, capStreak: 0, capDueRound: state.bingeRound,
+          flagBox: 3, flagStreak: 0, flagDueRound: state.bingeRound
+        };
+      }
+      const p = state.progress[c.id];
+
+      if (!q.isRetry) {
+        state.roundStats.totalCards += 1;
+        if (isCorrect) state.roundStats.firstTryCorrect += 1;
+      }
+
+      if (isCorrect) {
+        const elapsedMs = Date.now() - state.questionStartTime;
+        playTone('correct');
+        state.streak += 1;
+        let flagSpeedNote = 'Correct! Next visual check in 15 rounds.';
+        let flagHeadline = 'CORRECT!';
+
+        if (!q.isRetry && elapsedMs < 2500) {
+          p.flagBox = Math.min(5, (p.flagBox || 2) + 2);
+          p.flagStreak = 0;
+          flagHeadline = '⚡ FAST RECALL! (+2 Levels)';
+          flagSpeedNote = `Quick recognition (${(elapsedMs / 1000).toFixed(1)}s) — jumped to Flag Level ${p.flagBox}.`;
+          const flagLvlLabel = p.flagBox >= 5 ? `${c.country} (Flag Mastered)` : `${c.country} (Flag Lvl ${p.flagBox})`;
+          if (!state.roundStats.promoted.includes(flagLvlLabel)) {
+            state.roundStats.promoted.push(flagLvlLabel);
+          }
+        } else if (!q.isRetry && elapsedMs > 8000) {
+          p.flagStreak = 0;
+          flagSpeedNote = 'Correct, though hesitant — will reinforce once more before leveling up.';
+        } else {
+          p.flagStreak += 1;
+          if (p.flagStreak >= 2 && p.flagBox < 5) {
+            p.flagBox += 1;
+            p.flagStreak = 0;
+            const flagLvlLabel = p.flagBox >= 5 ? `${c.country} (Flag Mastered)` : `${c.country} (Flag Lvl ${p.flagBox})`;
+            if (!state.roundStats.promoted.includes(flagLvlLabel)) {
+              state.roundStats.promoted.push(flagLvlLabel);
+            }
+          }
+        }
+        p.flagDueRound = state.bingeRound + 15;
+        saveProgress();
+
+        const bulletsHtml = `
+          <ul class="feedback-bullet-list">
+            <li><strong>Country:</strong> ${renderFlagHtml(c, 'flag-img-xs')}${c.country}</li>
+            <li><strong>Capital:</strong> ${c.capital}</li>
+            <li><strong>Region:</strong> ${c.subregion} (${c.continent})</li>
+            <li><strong>Status:</strong> ${flagSpeedNote}</li>
+          </ul>
+        `;
+        showFeedback(true, flagHeadline, bulletsHtml);
+      } else {
+        playTone('wrong');
+        state.streak = 0;
+        p.flagBox = 2;
+        p.flagStreak = 0;
+        p.flagDueRound = state.bingeRound + 1;
+        saveProgress();
+        queueMissedItemForRetry(c, 'flagGrid', q.flagCount);
+
+        const bulletsHtml = `
+          <ul class="feedback-bullet-list">
+            <li><strong>Target Flag:</strong> ${renderFlagHtml(c, 'flag-img-xs')}${c.country}</li>
+            <li><strong>Capital:</strong> ${c.capital}</li>
+            <li><strong>Next step:</strong> Re-queued to test again in 3 cards!</li>
+          </ul>
+        `;
+        showFeedback(false, `LOCKED AS MISSED`, bulletsHtml);
+      }
+      updateBoxStatsUI();
+    }
+
+    function handleTypedInput(val) {
+      if (state.cardAttempted) return;
+      state.typedInput = val;
+      updateAutocompleteChips(val);
+    }
+
+    function updateAutocompleteChips(val) {
+      const container = document.getElementById('autocompleteChips');
+      if (!container) return;
+      const q = state.currentQuestion;
+      const qNorm = normalizeStr(val);
+      if (qNorm.length < 2) {
+        container.innerHTML = '';
+        return;
+      }
+      const isReverse = q && q.direction === 'capToCountry';
+      const matches = COUNTRIES
+        .map(c => isReverse ? c.country : c.capital)
+        .filter(item => normalizeStr(item).includes(qNorm))
+        .slice(0, 4);
+
+      container.innerHTML = matches.map(m => `
+        <button onclick="selectAutocomplete('${m.replace(/'/g, "\\'")}')" class="chip-pill">
+          ${m}
+        </button>
+      `).join('');
+    }
+
+    function selectAutocomplete(val) {
+      if (state.cardAttempted) return;
+      state.typedInput = val;
+      const box = document.getElementById('fuzzyInputBox');
+      if (box) box.value = val;
+      submitTypedAnswer();
+    }
+
+    function fillSampleTypo() {
+      if (state.cardAttempted) return;
+      const q = state.currentQuestion;
+      if (!q || !q.countryObj) return;
+      const targetStr = q.direction === 'capToCountry' ? q.countryObj.country : q.countryObj.capital;
+      const hint = targetStr.slice(0, 3);
+      state.typedInput = hint;
+      const box = document.getElementById('fuzzyInputBox');
+      if (box) {
+        box.value = hint;
+        box.focus();
+      }
+      updateAutocompleteChips(hint);
+    }
+
+    function submitTypedAnswer() {
+      if (state.cardAttempted) return;
+
+      const q = state.currentQuestion;
+      if (!q || !q.countryObj) return;
+      const c = q.countryObj;
+      const box = document.getElementById('fuzzyInputBox');
+      const raw = box ? box.value : state.typedInput;
+      const clean = normalizeStr(raw);
+      if (!clean) return;
+
+      state.cardAttempted = true;
+      if (box) box.disabled = true;
+      const btn = document.getElementById('btnTypedSubmit');
+      if (btn) btn.disabled = true;
+
+      const expected = q.direction === 'capToCountry' ? c.country : c.capital;
+      const target = normalizeStr(expected);
+      const dist = levenshtein(clean, target);
+
+      state.roundStats.totalCards += 1;
+
+      const elapsedMs = Date.now() - state.questionStartTime;
+      if (dist <= 2) {
+        playTone('correct');
+        state.streak += 1;
+        state.roundStats.firstTryCorrect += 1;
+        const res = promoteCapital(c.id, true, false, elapsedMs, true);
+        const speedPrefix = res.speedTier === 'fast' ? '⚡ FAST RECALL (+2)! ' : '';
+        const msg = dist === 0
+          ? `${speedPrefix}EXACT: ${expected}`
+          : `${speedPrefix}CLOSE ENOUGH! Accepted "${raw}" for ${expected}`;
+        showFeedback(true, msg, getCoachingNote(c));
+      } else {
+        playTone('wrong');
+        state.streak = 0;
+        promoteCapital(c.id, false, false);
+        queueMissedItemForRetry(c, 'mcCapital');
+        showFeedback(
+          false,
+          `LOCKED AS MISSED • Answer: ${expected}`,
+          `${getCoachingNote(c)} (Re-queued for later in this round!)`
+        );
+      }
+      updateBoxStatsUI();
+    }
+
+    function quickPickTrivia(countryName) {
+      const box = document.getElementById('triviaInputBox');
+      if (box) box.value = countryName;
+      submitTriviaSlot();
+    }
+
+    function submitTriviaSlot() {
+      const q = state.currentQuestion;
+      if (!q || q.kind !== 'trivia') return;
+      const box = document.getElementById('triviaInputBox');
+      if (!box || !box.value.trim()) return;
+      const query = normalizeStr(box.value);
+
+      const match = q.validMatches.find(item => {
+        const cNorm = normalizeStr(item.country);
+        return levenshtein(query, cNorm) <= 2 || normalizeStr(item.capital) === query;
+      });
+
+      if (match) {
+        if (state.triviaFound.some(f => f.id === match.id)) {
+          box.value = '';
+          return;
+        }
+        state.triviaFound.push(match);
+        box.value = '';
+        playTone('correct');
+        renderActiveCard();
+
+        if (state.triviaFound.length >= 3) {
+          state.streak += 1;
+          const allNames = q.validMatches.slice(0, 7).map(m => `${m.country} (${m.capital})`).join(', ');
+          showFeedback(true, `3 OF 3 SOLVED!`, `Matches include: ${allNames}`);
+        }
+      } else {
+        playTone('wrong');
+        showFeedback(false, `NOT A MATCH FOR THIS PROMPT`, `No penalty to your country boxes! Try another or tap Hint.`);
+        box.value = '';
+      }
+    }
+
+    function toggleTriviaHint() {
+      state.triviaHintUsed = !state.triviaHintUsed;
+      playTone('click');
+      renderActiveCard();
+    }
+
+    function revealAllAfricaA() {
+      const q = state.currentQuestion;
+      if (!q || q.kind !== 'trivia') return;
+      playTone('click');
+      const list = q.validMatches.slice(0, 8).map(x => `${x.country} (${x.capital})`).join(', ');
+      showFeedback(true, `VALID MATCHES:`, list);
+    }
+
+    // =========================================================================
+    // NAVIGATION & SETTINGS
+    // =========================================================================
+    function hideFeedback() {
+      const fb = document.getElementById('feedbackBanner');
+      if (fb) fb.classList.add('hidden');
+    }
+
+    function showFeedback(isCorrect, headline, subtext) {
+      const fb = document.getElementById('feedbackBanner');
+      const h = document.getElementById('feedbackHeadline');
+      const s = document.getElementById('feedbackSubtext');
+      if (!fb || !h || !s) return;
+      fb.className = isCorrect ? 'feedback-box' : 'feedback-box wrong';
+      h.textContent = headline;
+      s.innerHTML = subtext;
+    }
+
+    function nextSampleQuestion() {
+      playTone('click');
+      hideFeedback();
+
+      const wasRetry = state.currentQuestion && state.currentQuestion.isRetry;
+      if (!wasRetry) {
+        state.cardNumber += 1;
+      }
+
+      if (state.cardNumber > QUESTIONS_PER_ROUND && state.requeueList.length === 0) {
+        state.showingRoundSummary = true;
+        renderActiveCard();
+        return;
+      }
+
+      buildNextQuestion();
+      renderActiveCard();
+    }
+
+    function startNextRoundFromSummary() {
+      playTone('click');
+      state.showingRoundSummary = false;
+      state.cardNumber = 1;
+      state.bingeRound += 1;
+      resetRoundStats();
+      saveProgress();
+      buildNextQuestion();
+      renderActiveCard();
+    }
+
+    function switchInGameMode(mode) {
+      state.mode = mode;
+      state.showingRoundSummary = false;
+      playTone('click');
+      hideFeedback();
+
+      const modeLearn = document.getElementById('modeBtnLearn');
+      const modeFlags = document.getElementById('modeBtnFlags');
+      const modeShapes = document.getElementById('modeBtnShapes');
+      [modeLearn, modeFlags, modeShapes].forEach(b => {
+        if (b) b.className = 'mode-tab';
+      });
+      if (mode === 'flags' && modeFlags) modeFlags.className = 'mode-tab active-mode';
+      else if (mode === 'shapes' && modeShapes) modeShapes.className = 'mode-tab active-mode';
+      else if (modeLearn) modeLearn.className = 'mode-tab active-mode';
+
+      buildNextQuestion();
+      renderActiveCard();
+    }
+
+    function setMechanic(mech) {
+      state.showingRoundSummary = false;
+      playTone('click');
+      hideFeedback();
+      if (mech === 'box3flag') {
+        state.mode = 'flags';
+        buildNextQuestion('box3flag');
+      } else if (mech === 'shapes') {
+        state.mode = 'shapes';
+        buildNextQuestion('shapes');
+      } else if (mech === 'trivia') {
+        state.mode = 'trivia';
+        buildNextQuestion('trivia');
+      } else if (mech === 'box4type') {
+        state.mode = 'learn';
+        buildNextQuestion('box4type');
+      } else {
+        state.mode = 'learn';
+        buildNextQuestion();
+      }
+      renderActiveCard();
+    }
+
+    function changeRegion(newRegion) {
+      state.region = newRegion;
+      state.showingRoundSummary = false;
+      state.requeueList = [];
+      const pill = document.getElementById('regionPill');
+      if (pill) pill.textContent = newRegion === 'All' ? 'WORLD' : newRegion.toUpperCase();
+      replenishActivePool();
+      hideFeedback();
+      buildNextQuestion();
+      renderActiveCard();
+    }
+
+    function advanceBingeRound() {
+      state.bingeRound += 1;
+      state.showingRoundSummary = false;
+      playTone('click');
+      saveProgress();
+      hideFeedback();
+      buildNextQuestion();
+      renderActiveCard();
+    }
+
+    function setTheme(themeName) {
+      state.theme = themeName;
+      playTone('click');
+      const body = document.getElementById('appBody');
+      body.className = `theme-${themeName}`;
+
+      const map = {
+        airmail: 'btnThemeAirmail',
+        globetrotter: 'btnThemeGlobetrotter',
+        retro: 'btnThemeRetro'
+      };
+      Object.entries(map).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.className = key === themeName ? 'studio-btn active-theme' : 'studio-btn';
+      });
+
+      const titles = {
+        retro: 'GEO-QUEST',
+        airmail: 'PAR AVION ATLAS',
+        globetrotter: 'GLOBETROTTER'
+      };
+      const t = document.getElementById('hudTitle');
+      if (t) t.textContent = titles[themeName] || 'GEO-QUEST';
+      saveProgress();
+      renderActiveCard();
+    }
+
+    function toggleSummaryRules() {
+      const box = document.getElementById('summaryRulesBox');
+      if (box) box.classList.toggle('hidden');
+      playTone('click');
+    }
+
+    function toggleCompareView() {
+      const sidebar = document.getElementById('conceptSidebar');
+      if (sidebar) sidebar.open = !sidebar.open;
+    }
+
+    // Hide preview warning as soon as JS runs
+    const jsBanner = document.getElementById('jsRequiredBanner');
+    if (jsBanner) jsBanner.classList.add('hidden');
+
+    // Boot immediately
+    loadProgress();
+    setTheme(state.theme || 'retro');
+    buildNextQuestion();
+    renderActiveCard();
+    loadWorldShapes();
+  </script>
+</body>
+</html>
