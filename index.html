@@ -77,10 +77,12 @@
       font-size: 15px;
       transition: transform 0.06s steps(2), border-color 0.1s ease, background-color 0.1s ease;
     }
-    .theme-retro .btn-choice:hover:not(:disabled) {
-      background: #2e384d;
-      border-color: #38bdf8;
-      color: #38bdf8;
+    @media (hover: hover) and (pointer: fine) {
+      .theme-retro .btn-choice:hover:not(:disabled) {
+        background: #2e384d;
+        border-color: #38bdf8;
+        color: #38bdf8;
+      }
     }
     .theme-retro .btn-choice:active:not(:disabled) {
       transform: translate(3px, 3px);
@@ -161,9 +163,11 @@
       color: #2b2623;
       font-weight: 700;
     }
-    .theme-airmail .btn-choice:hover:not(:disabled) {
-      background: #f5ecd8;
-      border-color: #204b7d;
+    @media (hover: hover) and (pointer: fine) {
+      .theme-airmail .btn-choice:hover:not(:disabled) {
+        background: #f5ecd8;
+        border-color: #204b7d;
+      }
     }
     .theme-airmail .mode-tab {
       border-color: #bda988;
@@ -268,9 +272,11 @@
       color: #1e293b;
       font-weight: 700;
     }
-    .theme-globetrotter .btn-choice:hover:not(:disabled) {
-      border-color: #38bdf8;
-      background: #f0f9ff;
+    @media (hover: hover) and (pointer: fine) {
+      .theme-globetrotter .btn-choice:hover:not(:disabled) {
+        border-color: #38bdf8;
+        background: #f0f9ff;
+      }
     }
     .theme-globetrotter .mode-tab {
       border-color: #cbd5e1;
@@ -2420,6 +2426,9 @@
     }
 
     function nextSampleQuestion() {
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
       playTone('click');
       hideFeedback();
 
