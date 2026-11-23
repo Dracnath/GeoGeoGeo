@@ -169,15 +169,7 @@
         border-color: #204b7d;
       }
     }
-    .theme-airmail .mode-tab {
-      border-color: #bda988;
-      color: #2b2623;
-    }
-    .theme-airmail .mode-tab.active-mode {
-      border-color: #d13b34;
-      background: rgba(209, 59, 52, 0.12);
-      color: #b02a24;
-    }
+
     .theme-airmail .game-input {
       background: #fffdf9;
       color: #2b2623;
@@ -278,16 +270,7 @@
         background: #f0f9ff;
       }
     }
-    .theme-globetrotter .mode-tab {
-      border-color: #cbd5e1;
-      border-radius: 10px;
-      color: #334155;
-    }
-    .theme-globetrotter .mode-tab.active-mode {
-      border-color: #0284c7;
-      background: #e0f2fe;
-      color: #0369a1;
-    }
+
     .theme-globetrotter .game-input {
       background: #ffffff;
       color: #1e293b;
@@ -396,67 +379,114 @@
       font-weight: 700;
       opacity: 0.9;
     }
-    .mode-bar {
+    /* PRIMARY MODE: CONNECTED SEGMENTED SWITCH */
+    .submode-bar {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-bottom: 14px;
-    }
-    .mode-tab {
-      padding: 8px 6px;
+      grid-template-columns: 1fr 1fr;
+      padding: 3px;
+      background: rgba(0, 0, 0, 0.28);
       border: 2px solid #334155;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      gap: 3px;
+    }
+    .submode-btn {
+      padding: 8px 8px;
+      border: none;
+      border-radius: 7px;
       background: transparent;
       color: inherit;
       font-size: 12px;
       font-weight: 700;
-      opacity: 0.7;
-      transition: all 0.12s ease;
+      opacity: 0.65;
+      transition: all 0.14s ease;
     }
-    .mode-tab.active-mode {
-      border-color: #fbbf24;
-      background: rgba(251, 191, 36, 0.14);
-      color: #fbbf24;
+    .submode-btn.active-submode {
+      background: #fbbf24;
+      color: #0f172a;
       opacity: 1;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     }
-    .submode-bar {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    .theme-airmail .submode-bar {
+      background: #efe6d2;
+      border-color: #bda988;
+    }
+    .theme-airmail .submode-btn.active-submode {
+      background: #d13b34;
+      color: #ffffff;
+    }
+    .theme-globetrotter .submode-bar {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      border-radius: 999px;
+    }
+    .theme-globetrotter .submode-btn {
+      border-radius: 999px;
+    }
+    .theme-globetrotter .submode-btn.active-submode {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    /* SECONDARY DATA SOURCES: CHECKABLE ROUNDED FILTER CHIPS */
+    .source-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
       gap: 6px;
       margin-bottom: 12px;
     }
-    .submode-btn {
-      padding: 5px 8px;
-      border: 1.5px solid #334155;
+    .source-chip {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1.5px solid #475569;
       background: transparent;
       color: inherit;
       font-size: 11px;
       font-weight: 700;
-      opacity: 0.7;
+      opacity: 0.6;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       transition: all 0.12s ease;
     }
-    .submode-btn.active-submode {
+    .source-chip.active-chip {
       border-color: #38bdf8;
-      background: rgba(56, 189, 248, 0.14);
+      background: rgba(56, 189, 248, 0.16);
       color: #38bdf8;
       opacity: 1;
     }
-    .theme-airmail .submode-btn {
+    .source-chip-all {
+      padding: 5px 9px;
+      border-radius: 999px;
+      border: 1.5px dashed #64748b;
+      background: transparent;
+      color: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      opacity: 0.75;
+    }
+    .source-chip-all.active-chip {
+      border-style: solid;
+      border-color: #34d399;
+      color: #34d399;
+      opacity: 1;
+    }
+    .theme-airmail .source-chip {
       border-color: #bda988;
     }
-    .theme-airmail .submode-btn.active-submode {
+    .theme-airmail .source-chip.active-chip {
       border-color: #204b7d;
       background: rgba(32, 75, 125, 0.12);
       color: #204b7d;
     }
-    .theme-globetrotter .submode-btn {
-      border-color: #cbd5e1;
-      border-radius: 8px;
-    }
-    .theme-globetrotter .submode-btn.active-submode {
+    .theme-globetrotter .source-chip.active-chip {
       border-color: #0284c7;
       background: #e0f2fe;
       color: #0369a1;
     }
+
     .blitz-hud {
       display: flex;
       align-items: center;
@@ -772,26 +802,29 @@
           </div>
         </div>
 
-        <!-- 3-TAB MODE BAR -->
-        <div id="inGameModeTabs" class="mode-bar">
-          <button id="modeBtnLearn" onclick="switchInGameMode('learn')" class="mode-tab active-mode">
-            LEARN
+        <!-- PRIMARY MODE SWITCHER (STUDY vs 30s BLITZ) -->
+        <div class="submode-bar">
+          <button id="subBtnStudy" onclick="setPlayStyle('study')" class="submode-btn active-submode">
+            📚 STUDY
           </button>
-          <button id="modeBtnFlags" onclick="switchInGameMode('flags')" class="mode-tab">
-            FLAGS
-          </button>
-          <button id="modeBtnShapes" onclick="switchInGameMode('shapes')" class="mode-tab">
-            BORDERS
+          <button id="subBtnBlitz" onclick="setPlayStyle('blitz')" class="submode-btn">
+            ⚡ 30s BLITZ
           </button>
         </div>
 
-        <!-- STUDY vs 30s BLITZ TOGGLE -->
-        <div class="submode-bar">
-          <button id="subBtnStudy" onclick="setPlayStyle('study')" class="submode-btn active-submode">
-            📚 Study
+        <!-- MULTI-SELECT DATA SOURCE CHIPS -->
+        <div id="inGameModeTabs" class="source-chips-row" role="group" aria-label="Data Sources">
+          <button id="chipCapitals" onclick="toggleSource('capitals')" class="source-chip active-chip">
+            <span class="chip-check">✓</span> Capitals
           </button>
-          <button id="subBtnBlitz" onclick="setPlayStyle('blitz')" class="submode-btn">
-            ⚡ 30s Blitz
+          <button id="chipFlags" onclick="toggleSource('flags')" class="source-chip active-chip">
+            <span class="chip-check">✓</span> Flags
+          </button>
+          <button id="chipBorders" onclick="toggleSource('borders')" class="source-chip active-chip">
+            <span class="chip-check">✓</span> Borders
+          </button>
+          <button id="chipAll" onclick="selectAllSources()" class="source-chip-all active-chip">
+            All
           </button>
         </div>
 
@@ -923,11 +956,20 @@
           </button>
         </div>
         <div style="display:flex;justify-content:flex-end;font-size:10px;opacity:0.6;padding-top:2px;">
-          <span id="appVersionLabel">Version: v1.04</span>
+          <span id="appVersionLabel">Version: v1.07</span>
         </div>
 
         <!-- Preserved compatibility elements -->
         <div class="hidden">
+          <button id="modeBtnLearn" onclick="switchInGameMode('learn')">Capitals</button>
+          <button id="modeBtnFlags" onclick="switchInGameMode('flags')">Flags</button>
+          <button id="modeBtnShapes" onclick="switchInGameMode('shapes')">Borders</button>
+          <button onclick="switchInGameMode('learn')">CAPITALS</button>
+          <button onclick="switchInGameMode('flags')">FLAGS</button>
+          <button onclick="switchInGameMode('shapes')">BORDERS</button>
+          <button onclick="setPlayStyle('study')">📚 Study</button>
+          <button onclick="setPlayStyle('blitz')">⚡ 30s Blitz</button>
+          <button onclick="switchInGameMode('learn')">LEARN</button>
           <button onclick="switchInGameMode('shapes')">SHAPES</button>
           <button onclick="setMechanic('shapes')">Shapes</button>
           <button id="modeBtnTrivia" onclick="switchInGameMode('trivia')">TRIVIA</button>
@@ -1379,7 +1421,7 @@
     // =========================================================================
     // SPACED REPETITION & GAME STATE
     // =========================================================================
-    const APP_VERSION = 'v1.04';
+    const APP_VERSION = 'v1.07';
     const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
     const ACTIVE_POOL_TARGET = 6;
     const QUESTIONS_PER_ROUND = 10;
@@ -1387,6 +1429,7 @@
     const state = {
       theme: 'retro',
       mode: 'learn',
+      sources: { capitals: true, flags: true, borders: true },
       playStyle: 'study',     // 'study' | 'blitz'
       blitzPhase: 'ready',    // 'ready' | 'running' | 'done'
       blitzTimeLeft: 30.0,
@@ -1724,9 +1767,11 @@
         }
       }
 
-      // 0. BLITZ MODE (Fast 4-choice random cards across active mode & region)
+      // 0. BLITZ MODE (Fast 4-choice random cards across enabled sources & region)
       if (state.playStyle === 'blitz') {
-        if (state.mode === 'shapes') {
+        const enabled = getEnabledSourcesList();
+        const pickSrc = enabled[Math.floor(Math.random() * enabled.length)];
+        if (pickSrc === 'borders') {
           if (!state.worldShapesReady) {
             state.currentQuestion = { kind: 'shapesLoading' };
             loadWorldShapes();
@@ -1744,7 +1789,7 @@
           };
           return;
         }
-        if (state.mode === 'flags') {
+        if (pickSrc === 'flags') {
           const target = pool[Math.floor(Math.random() * pool.length)];
           const distractors = getSmartDistractors(target, 3);
           state.currentQuestion = {
@@ -1775,8 +1820,13 @@
         return;
       }
 
-      // 1. Dedicated SHAPES Mode (Country Outline)
-      if (state.mode === 'shapes' || forceType === 'shapes') {
+      const enabledStudy = getEnabledSourcesList();
+      const chosenStudySrc = (!forceType && state.mode !== 'trivia')
+        ? enabledStudy[Math.floor(Math.random() * enabledStudy.length)]
+        : null;
+
+      // 1. Borders (Country Outline)
+      if (forceType === 'shapes' || chosenStudySrc === 'borders') {
         if (!state.worldShapesReady) {
           state.currentQuestion = { kind: 'shapesLoading' };
           state.mechanic = 'shapes';
@@ -1809,8 +1859,8 @@
         return;
       }
 
-      // 2. Dedicated FLAGS Mode or Forced Flag Grid (Upgrades from 4 to 6 flags as level increases)
-      if (state.mode === 'flags' || forceType === 'box3flag') {
+      // 2. Flags Mode or Forced Flag Grid (Upgrades from 4 to 6 flags as level increases)
+      if (forceType === 'box3flag' || chosenStudySrc === 'flags') {
         const target = pool[Math.floor(Math.random() * pool.length)];
         const p = state.progress[target.id] || { flagBox: 2 };
         const flagBox = p.flagBox || 2;
@@ -1925,12 +1975,12 @@
       // BLITZ READY / RESULTS SCREENS
       if (state.playStyle === 'blitz') {
         updateBlitzHud();
-        const bestKey = `${state.mode}_${state.region}`;
+        const bestKey = `${getActiveSourcesKey()}_${state.region}`;
         const bestVal = state.blitzBest[bestKey] || 0;
-        const modeLabel = state.mode === 'shapes' ? 'BORDERS' : state.mode.toUpperCase();
+        const modeLabel = getActiveSourcesLabel();
 
         if (state.blitzPhase === 'ready') {
-          if (state.mode === 'shapes' && !state.worldShapesReady) loadWorldShapes();
+          if (state.sources.borders && !state.worldShapesReady) loadWorldShapes();
           cardEl.innerHTML = `
             <div style="font-size:11px;color:#38bdf8;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">
               ⚡ 30-SECOND BLITZ • ${modeLabel}
@@ -2766,6 +2816,75 @@
       renderActiveCard();
     }
 
+    function getEnabledSourcesList() {
+      const list = [];
+      if (state.sources.capitals) list.push('capitals');
+      if (state.sources.flags) list.push('flags');
+      if (state.sources.borders) list.push('borders');
+      return list.length > 0 ? list : ['capitals'];
+    }
+
+    function getActiveSourcesKey() {
+      const list = getEnabledSourcesList();
+      return list.length === 3 ? 'all' : list.join('+');
+    }
+
+    function getActiveSourcesLabel() {
+      const list = getEnabledSourcesList();
+      if (list.length === 3) return 'ALL SOURCES';
+      return list.map(s => s.toUpperCase()).join(' + ');
+    }
+
+    function updateSourceChipsUI() {
+      const map = [
+        ['chipCapitals', state.sources.capitals],
+        ['chipFlags', state.sources.flags],
+        ['chipBorders', state.sources.borders]
+      ];
+      map.forEach(([id, active]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = active ? 'source-chip active-chip' : 'source-chip';
+        const chk = el.querySelector('.chip-check');
+        if (chk) chk.textContent = active ? '✓' : '○';
+      });
+      const allEl = document.getElementById('chipAll');
+      if (allEl) {
+        const isAll = state.sources.capitals && state.sources.flags && state.sources.borders;
+        allEl.className = isAll ? 'source-chip-all active-chip' : 'source-chip-all';
+      }
+    }
+
+    function toggleSource(src) {
+      clearBlitzTimers();
+      const next = { ...state.sources, [src]: !state.sources[src] };
+      if (!next.capitals && !next.flags && !next.borders) {
+        // Keep at least one source active
+        playTone('wrong');
+        return;
+      }
+      state.sources = next;
+      state.showingRoundSummary = false;
+      if (state.playStyle === 'blitz') state.blitzPhase = 'ready';
+      playTone('click');
+      hideFeedback();
+      updateSourceChipsUI();
+      buildNextQuestion();
+      renderActiveCard();
+    }
+
+    function selectAllSources() {
+      clearBlitzTimers();
+      state.sources = { capitals: true, flags: true, borders: true };
+      state.showingRoundSummary = false;
+      if (state.playStyle === 'blitz') state.blitzPhase = 'ready';
+      playTone('click');
+      hideFeedback();
+      updateSourceChipsUI();
+      buildNextQuestion();
+      renderActiveCard();
+    }
+
     function clearBlitzTimers() {
       if (state.blitzTimerId) {
         clearInterval(state.blitzTimerId);
@@ -2788,7 +2907,7 @@
         return;
       }
       hud.classList.remove('hidden');
-      const bestKey = `${state.mode}_${state.region}`;
+      const bestKey = `${getActiveSourcesKey()}_${state.region}`;
       if (tEl) tEl.textContent = `⏱ ${Math.max(0, state.blitzTimeLeft).toFixed(1)}s`;
       if (sEl) sEl.textContent = `Score: ${state.blitzScore}`;
       if (bEl) bEl.textContent = `🏆 Best: ${state.blitzBest[bestKey] || 0}`;
@@ -2877,7 +2996,7 @@
       clearBlitzTimers();
       state.blitzPhase = 'done';
       state.blitzTimeLeft = 0;
-      const bestKey = `${state.mode}_${state.region}`;
+      const bestKey = `${getActiveSourcesKey()}_${state.region}`;
       const prevBest = state.blitzBest[bestKey] || 0;
       if (state.blitzScore > prevBest) {
         state.blitzBest[bestKey] = state.blitzScore;
@@ -2891,21 +3010,14 @@
     function switchInGameMode(mode) {
       clearBlitzTimers();
       state.mode = mode;
+      if (mode === 'flags') state.sources = { capitals: false, flags: true, borders: false };
+      else if (mode === 'shapes') state.sources = { capitals: false, flags: false, borders: true };
+      else if (mode === 'learn') state.sources = { capitals: true, flags: false, borders: false };
       if (state.playStyle === 'blitz') state.blitzPhase = 'ready';
       state.showingRoundSummary = false;
       playTone('click');
       hideFeedback();
-
-      const modeLearn = document.getElementById('modeBtnLearn');
-      const modeFlags = document.getElementById('modeBtnFlags');
-      const modeShapes = document.getElementById('modeBtnShapes');
-      [modeLearn, modeFlags, modeShapes].forEach(b => {
-        if (b) b.className = 'mode-tab';
-      });
-      if (mode === 'flags' && modeFlags) modeFlags.className = 'mode-tab active-mode';
-      else if (mode === 'shapes' && modeShapes) modeShapes.className = 'mode-tab active-mode';
-      else if (modeLearn) modeLearn.className = 'mode-tab active-mode';
-
+      updateSourceChipsUI();
       buildNextQuestion();
       renderActiveCard();
     }
