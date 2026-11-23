@@ -418,6 +418,53 @@
       color: #fbbf24;
       opacity: 1;
     }
+    .submode-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .submode-btn {
+      padding: 5px 8px;
+      border: 1.5px solid #334155;
+      background: transparent;
+      color: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      opacity: 0.7;
+      transition: all 0.12s ease;
+    }
+    .submode-btn.active-submode {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.14);
+      color: #38bdf8;
+      opacity: 1;
+    }
+    .theme-airmail .submode-btn {
+      border-color: #bda988;
+    }
+    .theme-airmail .submode-btn.active-submode {
+      border-color: #204b7d;
+      background: rgba(32, 75, 125, 0.12);
+      color: #204b7d;
+    }
+    .theme-globetrotter .submode-btn {
+      border-color: #cbd5e1;
+      border-radius: 8px;
+    }
+    .theme-globetrotter .submode-btn.active-submode {
+      border-color: #0284c7;
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    .blitz-hud {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
     .progress-track {
       width: 100%;
       height: 6px;
@@ -472,11 +519,20 @@
       opacity: 0.78;
     }
     .shape-neighbor-label {
-      fill: #cbd5e1;
+      fill: #f1f5f9;
       font-size: 8px;
       font-weight: 700;
-      text-anchor: middle;
+      paint-order: stroke;
+      stroke: #131722;
+      stroke-width: 2.5px;
+      stroke-linejoin: round;
       pointer-events: none;
+    }
+    .theme-airmail .shape-neighbor-label {
+      stroke: #fffdf7;
+    }
+    .theme-globetrotter .shape-neighbor-label {
+      stroke: #f0f9ff;
     }
     .theme-airmail .shape-neighbor-path {
       fill: #dfd3bc;
@@ -725,8 +781,25 @@
             FLAGS
           </button>
           <button id="modeBtnShapes" onclick="switchInGameMode('shapes')" class="mode-tab">
-            SHAPES
+            BORDERS
           </button>
+        </div>
+
+        <!-- STUDY vs 30s BLITZ TOGGLE -->
+        <div class="submode-bar">
+          <button id="subBtnStudy" onclick="setPlayStyle('study')" class="submode-btn active-submode">
+            📚 Study
+          </button>
+          <button id="subBtnBlitz" onclick="setPlayStyle('blitz')" class="submode-btn">
+            ⚡ 30s Blitz
+          </button>
+        </div>
+
+        <!-- BLITZ TIMER & SCORE HUD (SHOWN IN BLITZ) -->
+        <div id="blitzHud" class="blitz-hud hidden">
+          <span id="blitzTimerText">⏱ 30.0s</span>
+          <span id="blitzScoreText">Score: 0</span>
+          <span id="blitzBestText">🏆 Best: 0</span>
         </div>
 
         <!-- THIN PROGRESS BAR -->
@@ -843,18 +916,20 @@
             <button id="tabMech1" onclick="setMechanic('box1')" class="btn-setting-action">Level 1–2 (Choice)</button>
             <button id="tabMech2" onclick="setMechanic('box3flag')" class="btn-setting-action">Level 3 (Flags)</button>
             <button id="tabMech3" onclick="setMechanic('box4type')" class="btn-setting-action">Level 4 (Typed)</button>
-            <button id="tabMech4" onclick="setMechanic('shapes')" class="btn-setting-action">Shapes</button>
+            <button id="tabMech4" onclick="setMechanic('shapes')" class="btn-setting-action">Borders</button>
           </div>
           <button onclick="resetAllProgress()" style="background:none;border:none;color:#f43f5e;text-decoration:underline;font-size:11px;padding:0;">
             Reset Save
           </button>
         </div>
         <div style="display:flex;justify-content:flex-end;font-size:10px;opacity:0.6;padding-top:2px;">
-          <span id="appVersionLabel">Version: v1.01</span>
+          <span id="appVersionLabel">Version: v1.04</span>
         </div>
 
         <!-- Preserved compatibility elements -->
         <div class="hidden">
+          <button onclick="switchInGameMode('shapes')">SHAPES</button>
+          <button onclick="setMechanic('shapes')">Shapes</button>
           <button id="modeBtnTrivia" onclick="switchInGameMode('trivia')">TRIVIA</button>
           <button onclick="setMechanic('trivia')">Trivia</button><button onclick="setTheme('airmail')">✉️ Air-Mail Postcard</button>
           <button id="btnCompareAll" onclick="toggleCompareView()">⊞ Side-by-Side Notes</button>
@@ -1130,10 +1205,14 @@
         : feat;
 
       const centroid = d3.geoCentroid(feat);
+      const pad = neighbors.length > 0 ? [[26, 18], [234, 162]] : [[14, 14], [246, 166]];
       const proj = d3.geoAzimuthalEqualArea()
         .rotate([-centroid[0], -centroid[1]])
-        .fitExtent([[14, 14], [246, 166]], fitObj);
+        .fitExtent(pad, fitObj);
       const pathGen = d3.geoPath().projection(proj);
+      const targetPt = pathGen.centroid(feat);
+      const tx = (targetPt && !Number.isNaN(targetPt[0])) ? targetPt[0] : 130;
+      const ty = (targetPt && !Number.isNaN(targetPt[1])) ? targetPt[1] : 90;
 
       const neighborPaths = neighbors.map(nf => {
         const nd = pathGen(nf) || '';
@@ -1143,10 +1222,24 @@
       const neighborLabels = neighbors.map(nf => {
         const pt = pathGen.centroid(nf);
         if (!pt || Number.isNaN(pt[0]) || Number.isNaN(pt[1])) return '';
-        const x = Math.max(24, Math.min(236, pt[0]));
-        const y = Math.max(12, Math.min(172, pt[1]));
+        const dx = pt[0] - tx;
+        const dy = pt[1] - ty;
+        let anchor = 'middle';
+        let x = pt[0];
+        let y = pt[1];
+        if (dx < -10) {
+          anchor = 'end';
+          x = Math.max(62, Math.min(248, pt[0]));
+        } else if (dx > 10) {
+          anchor = 'start';
+          x = Math.max(12, Math.min(198, pt[0]));
+        } else {
+          x = Math.max(32, Math.min(228, pt[0]));
+          y = dy < 0 ? pt[1] - 3 : pt[1] + 5;
+        }
+        y = Math.max(12, Math.min(172, y));
         const name = (nf.properties && nf.properties.name) ? nf.properties.name : '';
-        return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" class="shape-neighbor-label">${name}</text>`;
+        return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" class="shape-neighbor-label">${name}</text>`;
       }).join('');
 
       const dStr = pathGen(feat) || '';
@@ -1286,7 +1379,7 @@
     // =========================================================================
     // SPACED REPETITION & GAME STATE
     // =========================================================================
-    const APP_VERSION = 'v1.01';
+    const APP_VERSION = 'v1.04';
     const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
     const ACTIVE_POOL_TARGET = 6;
     const QUESTIONS_PER_ROUND = 10;
@@ -1294,6 +1387,17 @@
     const state = {
       theme: 'retro',
       mode: 'learn',
+      playStyle: 'study',     // 'study' | 'blitz'
+      blitzPhase: 'ready',    // 'ready' | 'running' | 'done'
+      blitzTimeLeft: 30.0,
+      blitzScore: 0,
+      blitzAttempts: 0,
+      blitzStreak: 0,
+      blitzBestStreak: 0,
+      blitzNewBest: false,
+      blitzTimerId: null,
+      blitzAdvanceId: null,
+      blitzBest: {},          // keyed by `${mode}_${region}`
       mechanic: 'box1',
       region: 'All',
       soundEnabled: true,
@@ -1333,6 +1437,7 @@
             state.bingeRound = parsed.bingeRound || 1;
             state.streak = parsed.streak || 0;
             state.theme = parsed.theme || 'retro';
+            state.blitzBest = parsed.blitzBest || {};
           }
         }
       } catch (e) {}
@@ -1345,7 +1450,8 @@
           progress: state.progress,
           bingeRound: state.bingeRound,
           streak: state.streak,
-          theme: state.theme
+          theme: state.theme,
+          blitzBest: state.blitzBest
         }));
       } catch (e) {}
     }
@@ -1421,7 +1527,16 @@
       const lbl = document.getElementById('progressLabel');
       if (lbl) lbl.textContent = `Card ${Math.min(state.cardNumber, QUESTIONS_PER_ROUND)}/${QUESTIONS_PER_ROUND}${retrySuffix}`;
       const fill = document.getElementById('progressFill');
-      if (fill) fill.style.width = `${Math.min(100, (state.cardNumber / QUESTIONS_PER_ROUND) * 100)}%`;
+      if (fill) {
+        if (state.playStyle === 'blitz') {
+          const pct = Math.max(0, Math.min(100, (state.blitzTimeLeft / 30) * 100));
+          fill.style.width = `${pct}%`;
+          fill.style.background = state.blitzTimeLeft <= 5 ? '#f43f5e' : state.blitzTimeLeft <= 10 ? '#fbbf24' : '#38bdf8';
+        } else {
+          fill.style.width = `${Math.min(100, (state.cardNumber / QUESTIONS_PER_ROUND) * 100)}%`;
+          fill.style.background = '#38b764';
+        }
+      }
       const rd = document.getElementById('roundReadout');
       if (rd) rd.textContent = `RD ${String(state.bingeRound).padStart(2, '0')}`;
       const st = document.getElementById('hudStreak');
@@ -1609,6 +1724,57 @@
         }
       }
 
+      // 0. BLITZ MODE (Fast 4-choice random cards across active mode & region)
+      if (state.playStyle === 'blitz') {
+        if (state.mode === 'shapes') {
+          if (!state.worldShapesReady) {
+            state.currentQuestion = { kind: 'shapesLoading' };
+            loadWorldShapes();
+            return;
+          }
+          const shapePool = pool.filter(c => Boolean(state.shapeMap[c.id]));
+          const usable = shapePool.length >= 4 ? shapePool : COUNTRIES.filter(c => Boolean(state.shapeMap[c.id]));
+          const target = usable[Math.floor(Math.random() * usable.length)];
+          const distractors = getSmartDistractors(target, 3);
+          state.currentQuestion = {
+            kind: 'shapeOutline',
+            isRetry: false,
+            countryObj: target,
+            choices: shuffle([target.country, ...distractors.map(d => d.country)])
+          };
+          return;
+        }
+        if (state.mode === 'flags') {
+          const target = pool[Math.floor(Math.random() * pool.length)];
+          const distractors = getSmartDistractors(target, 3);
+          state.currentQuestion = {
+            kind: 'flagGrid',
+            isRetry: false,
+            countryObj: target,
+            box: 2,
+            flagCount: 4,
+            options: shuffle([target, ...distractors])
+          };
+          return;
+        }
+        // Learn Blitz: 4-choice Country <-> Capital
+        const target = pool[Math.floor(Math.random() * pool.length)];
+        const distractors = getSmartDistractors(target, 3);
+        const reverse = Math.random() < 0.35;
+        state.currentQuestion = {
+          kind: 'mcCapital',
+          isRetry: false,
+          direction: reverse ? 'capToCountry' : 'countryToCap',
+          countryObj: target,
+          box: 1,
+          showFlag: !reverse,
+          choices: reverse
+            ? shuffle([target.country, ...distractors.map(d => d.country)])
+            : shuffle([target.capital, ...distractors.map(d => d.capital)])
+        };
+        return;
+      }
+
       // 1. Dedicated SHAPES Mode (Country Outline)
       if (state.mode === 'shapes' || forceType === 'shapes') {
         if (!state.worldShapesReady) {
@@ -1755,6 +1921,69 @@
       if (!cardEl || !answerEl) return;
 
       updateBoxStatsUI();
+
+      // BLITZ READY / RESULTS SCREENS
+      if (state.playStyle === 'blitz') {
+        updateBlitzHud();
+        const bestKey = `${state.mode}_${state.region}`;
+        const bestVal = state.blitzBest[bestKey] || 0;
+        const modeLabel = state.mode === 'shapes' ? 'BORDERS' : state.mode.toUpperCase();
+
+        if (state.blitzPhase === 'ready') {
+          if (state.mode === 'shapes' && !state.worldShapesReady) loadWorldShapes();
+          cardEl.innerHTML = `
+            <div style="font-size:11px;color:#38bdf8;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">
+              ⚡ 30-SECOND BLITZ • ${modeLabel}
+            </div>
+            <div class="title-font" style="font-size:22px;font-weight:700;margin-bottom:8px;">
+              HOW MANY IN 30s?
+            </div>
+            <div style="font-size:12px;opacity:0.8;line-height:1.45;">
+              Fast 4-choice rounds • <strong>-2s</strong> on wrong taps • <strong>+2s</strong> every 5-streak
+            </div>
+            <div style="margin-top:12px;font-size:13px;font-weight:700;color:#fbbf24;">
+              🏆 Personal Best (${state.region === 'All' ? 'World' : state.region}): ${bestVal}
+            </div>
+          `;
+          answerEl.innerHTML = `
+            <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;background:#38bdf8;color:#0f172a;border-color:#0284c7;">
+              <span>START 30s BLITZ ►</span>
+            </button>
+          `;
+          return;
+        }
+
+        if (state.blitzPhase === 'done') {
+          const acc = state.blitzAttempts > 0 ? Math.round((state.blitzScore / state.blitzAttempts) * 100) : 0;
+          const newBestBadge = state.blitzNewBest ? `<div style="color:#fbbf24;font-weight:700;font-size:13px;margin-bottom:6px;">🎉 NEW PERSONAL BEST!</div>` : '';
+          cardEl.innerHTML = `
+            <div style="font-size:11px;color:#fbbf24;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">
+              ⏱ TIME'S UP • ${modeLabel} BLITZ
+            </div>
+            ${newBestBadge}
+            <div class="title-font" style="font-size:32px;font-weight:700;margin-bottom:8px;">
+              ${state.blitzScore} PTS
+            </div>
+            <div class="summary-row">
+              <strong>Accuracy:</strong> ${state.blitzScore} / ${state.blitzAttempts} (${acc}%)
+            </div>
+            <div class="summary-row">
+              <strong>Best Streak:</strong> ${state.blitzBestStreak} 🔥 &nbsp;|&nbsp; <strong>Best:</strong> ${bestVal} 🏆
+            </div>
+          `;
+          answerEl.innerHTML = `
+            <div class="choices-list">
+              <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;background:#38bdf8;color:#0f172a;border-color:#0284c7;">
+                <span>PLAY AGAIN ►</span>
+              </button>
+              <button onclick="setPlayStyle('study')" class="btn-choice choice-row-btn" style="justify-content:center;">
+                <span>BACK TO STUDY</span>
+              </button>
+            </div>
+          `;
+          return;
+        }
+      }
 
       // Clean End-of-Round Summary
       if (state.showingRoundSummary) {
@@ -2151,6 +2380,12 @@
       const expected = q.direction === 'capToCountry' ? c.country : c.capital;
       const isCorrect = selected === expected;
 
+      if (state.playStyle === 'blitz') {
+        lockMcButtons(selected, expected);
+        handleBlitzOutcome(isCorrect);
+        return;
+      }
+
       const elapsedMs = Date.now() - state.questionStartTime;
       lockMcButtons(selected, expected);
       const res = promoteCapital(c.id, isCorrect, q.isRetry, elapsedMs, false);
@@ -2193,6 +2428,10 @@
       const isCorrect = countryPicked === c.country;
 
       lockMcButtons(countryPicked, c.country);
+      if (state.playStyle === 'blitz') {
+        handleBlitzOutcome(isCorrect);
+        return;
+      }
       const shapeDisplay = document.getElementById('shapeBoxDisplay');
       if (shapeDisplay) {
         shapeDisplay.innerHTML = renderCountryOutlineSvg(c.id, true);
@@ -2242,6 +2481,11 @@
       const isCorrect = countryPicked === c.country;
 
       lockFlagButtons(countryPicked, c.country);
+
+      if (state.playStyle === 'blitz') {
+        handleBlitzOutcome(isCorrect);
+        return;
+      }
 
       if (!state.progress[c.id]) {
         state.progress[c.id] = {
@@ -2522,8 +2766,132 @@
       renderActiveCard();
     }
 
+    function clearBlitzTimers() {
+      if (state.blitzTimerId) {
+        clearInterval(state.blitzTimerId);
+        state.blitzTimerId = null;
+      }
+      if (state.blitzAdvanceId) {
+        clearTimeout(state.blitzAdvanceId);
+        state.blitzAdvanceId = null;
+      }
+    }
+
+    function updateBlitzHud() {
+      const hud = document.getElementById('blitzHud');
+      const tEl = document.getElementById('blitzTimerText');
+      const sEl = document.getElementById('blitzScoreText');
+      const bEl = document.getElementById('blitzBestText');
+      if (!hud) return;
+      if (state.playStyle !== 'blitz') {
+        hud.classList.add('hidden');
+        return;
+      }
+      hud.classList.remove('hidden');
+      const bestKey = `${state.mode}_${state.region}`;
+      if (tEl) tEl.textContent = `⏱ ${Math.max(0, state.blitzTimeLeft).toFixed(1)}s`;
+      if (sEl) sEl.textContent = `Score: ${state.blitzScore}`;
+      if (bEl) bEl.textContent = `🏆 Best: ${state.blitzBest[bestKey] || 0}`;
+    }
+
+    function setPlayStyle(style) {
+      clearBlitzTimers();
+      state.playStyle = style;
+      state.blitzPhase = 'ready';
+      state.showingRoundSummary = false;
+      playTone('click');
+      hideFeedback();
+
+      const bStudy = document.getElementById('subBtnStudy');
+      const bBlitz = document.getElementById('subBtnBlitz');
+      if (bStudy) bStudy.className = style === 'study' ? 'submode-btn active-submode' : 'submode-btn';
+      if (bBlitz) bBlitz.className = style === 'blitz' ? 'submode-btn active-submode' : 'submode-btn';
+
+      if (style === 'study') {
+        updateBlitzHud();
+        buildNextQuestion();
+      }
+      renderActiveCard();
+    }
+
+    function startBlitzRound() {
+      clearBlitzTimers();
+      playTone('click');
+      hideFeedback();
+      state.blitzPhase = 'running';
+      state.blitzTimeLeft = 30.0;
+      state.blitzScore = 0;
+      state.blitzAttempts = 0;
+      state.blitzStreak = 0;
+      state.blitzBestStreak = 0;
+      state.blitzNewBest = false;
+
+      buildNextQuestion();
+      renderActiveCard();
+
+      state.blitzTimerId = setInterval(() => {
+        state.blitzTimeLeft = Math.max(0, state.blitzTimeLeft - 0.1);
+        updateBlitzHud();
+        updateBoxStatsUI();
+        if (state.blitzTimeLeft <= 0) {
+          finishBlitzRound();
+        }
+      }, 100);
+    }
+
+    function handleBlitzOutcome(isCorrect) {
+      state.blitzAttempts += 1;
+      if (isCorrect) {
+        playTone('correct');
+        state.blitzScore += 1;
+        state.blitzStreak += 1;
+        if (state.blitzStreak > state.blitzBestStreak) {
+          state.blitzBestStreak = state.blitzStreak;
+        }
+        if (state.blitzStreak % 5 === 0) {
+          state.blitzTimeLeft = Math.min(30.0, state.blitzTimeLeft + 2.0);
+        }
+      } else {
+        playTone('wrong');
+        state.blitzStreak = 0;
+        state.blitzTimeLeft = Math.max(0, state.blitzTimeLeft - 2.0);
+      }
+      updateBlitzHud();
+      updateBoxStatsUI();
+
+      if (state.blitzTimeLeft <= 0) {
+        finishBlitzRound();
+        return;
+      }
+
+      const delay = isCorrect ? 300 : 480;
+      state.blitzAdvanceId = setTimeout(() => {
+        if (state.playStyle === 'blitz' && state.blitzPhase === 'running') {
+          buildNextQuestion();
+          renderActiveCard();
+        }
+      }, delay);
+    }
+
+    function finishBlitzRound() {
+      clearBlitzTimers();
+      state.blitzPhase = 'done';
+      state.blitzTimeLeft = 0;
+      const bestKey = `${state.mode}_${state.region}`;
+      const prevBest = state.blitzBest[bestKey] || 0;
+      if (state.blitzScore > prevBest) {
+        state.blitzBest[bestKey] = state.blitzScore;
+        state.blitzNewBest = true;
+        saveProgress();
+      }
+      playTone('correct');
+      renderActiveCard();
+    }
+
     function switchInGameMode(mode) {
+      clearBlitzTimers();
       state.mode = mode;
+      if (state.playStyle === 'blitz') state.blitzPhase = 'ready';
       state.showingRoundSummary = false;
       playTone('click');
       hideFeedback();
@@ -2566,7 +2934,9 @@
     }
 
     function changeRegion(newRegion) {
+      clearBlitzTimers();
       state.region = newRegion;
+      if (state.playStyle === 'blitz') state.blitzPhase = 'ready';
       state.showingRoundSummary = false;
       state.requeueList = [];
       const pill = document.getElementById('regionPill');
