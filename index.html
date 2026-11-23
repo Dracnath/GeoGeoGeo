@@ -379,41 +379,44 @@
       font-weight: 700;
       opacity: 0.9;
     }
-    /* PRIMARY MODE: CONNECTED SEGMENTED SWITCH */
+    /* PRIMARY MODE: CALM SEGMENTED SWITCH */
     .submode-bar {
       display: grid;
       grid-template-columns: 1fr 1fr;
       padding: 3px;
-      background: rgba(0, 0, 0, 0.28);
-      border: 2px solid #334155;
-      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1.5px solid #334155;
+      border-radius: 8px;
       margin-bottom: 10px;
-      gap: 3px;
+      gap: 4px;
     }
     .submode-btn {
-      padding: 8px 8px;
-      border: none;
-      border-radius: 7px;
+      padding: 7px 8px;
+      border: 1.5px solid transparent;
+      border-radius: 6px;
       background: transparent;
       color: inherit;
       font-size: 12px;
       font-weight: 700;
-      opacity: 0.65;
+      opacity: 0.6;
       transition: all 0.14s ease;
     }
     .submode-btn.active-submode {
-      background: #fbbf24;
-      color: #0f172a;
+      background: #252d3d;
+      border-color: #64748b;
+      color: #f8fafc;
       opacity: 1;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      box-shadow: inset 0 -2px 0 #38bdf8;
     }
     .theme-airmail .submode-bar {
       background: #efe6d2;
       border-color: #bda988;
     }
     .theme-airmail .submode-btn.active-submode {
-      background: #d13b34;
-      color: #ffffff;
+      background: #fffdf9;
+      border-color: #2b2623;
+      color: #2b2623;
+      box-shadow: inset 0 -2px 0 #204b7d;
     }
     .theme-globetrotter .submode-bar {
       background: #e2e8f0;
@@ -424,8 +427,10 @@
       border-radius: 999px;
     }
     .theme-globetrotter .submode-btn.active-submode {
-      background: #0284c7;
-      color: #ffffff;
+      background: #ffffff;
+      border-color: #94a3b8;
+      color: #0f172a;
+      box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08);
     }
 
     /* SECONDARY DATA SOURCES: CHECKABLE ROUNDED FILTER CHIPS */
@@ -776,7 +781,7 @@
     }
   </style>
 </head>
-<body class="theme-retro" id="appBody">
+<body class="theme-airmail" id="appBody">
 
   <main class="workspace-main">
 
@@ -791,7 +796,7 @@
 
         <!-- SLIM 1-LINE HEADER -->
         <div class="hud-minimal">
-          <span id="hudTitle" class="title-font hud-brand">GEO-QUEST</span>
+          <span id="hudTitle" class="title-font hud-brand">PAR AVION ATLAS</span>
           <div class="hud-stats">
             <span id="regionPill" style="opacity:0.75;">WORLD</span>
             <span id="roundReadout">RD 01</span>
@@ -956,7 +961,7 @@
           </button>
         </div>
         <div style="display:flex;justify-content:flex-end;font-size:10px;opacity:0.6;padding-top:2px;">
-          <span id="appVersionLabel">Version: v1.07</span>
+          <span id="appVersionLabel">Version: v1.09</span>
         </div>
 
         <!-- Preserved compatibility elements -->
@@ -1222,14 +1227,14 @@
         });
 
         state.worldShapesReady = true;
-        if (state.mode === 'shapes') {
-          buildNextQuestion('shapes');
+        if (state.currentQuestion && state.currentQuestion.kind === 'shapesLoading') {
+          buildNextQuestion();
           renderActiveCard();
         }
         return true;
       } catch (err) {
         state.worldShapesFailed = true;
-        if (state.mode === 'shapes') {
+        if (state.currentQuestion && state.currentQuestion.kind === 'shapesLoading') {
           renderActiveCard();
         }
         return false;
@@ -1421,13 +1426,13 @@
     // =========================================================================
     // SPACED REPETITION & GAME STATE
     // =========================================================================
-    const APP_VERSION = 'v1.07';
+    const APP_VERSION = 'v1.09';
     const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
     const ACTIVE_POOL_TARGET = 6;
     const QUESTIONS_PER_ROUND = 10;
 
     const state = {
-      theme: 'retro',
+      theme: 'airmail',
       mode: 'learn',
       sources: { capitals: true, flags: true, borders: true },
       playStyle: 'study',     // 'study' | 'blitz'
@@ -1479,7 +1484,7 @@
             state.progress = parsed.progress;
             state.bingeRound = parsed.bingeRound || 1;
             state.streak = parsed.streak || 0;
-            state.theme = parsed.theme || 'retro';
+            state.theme = parsed.theme || 'airmail';
             state.blitzBest = parsed.blitzBest || {};
           }
         }
@@ -1568,7 +1573,11 @@
       }
       const retrySuffix = state.requeueList.length > 0 ? ` (+${state.requeueList.length} Retry)` : '';
       const lbl = document.getElementById('progressLabel');
-      if (lbl) lbl.textContent = `Card ${Math.min(state.cardNumber, QUESTIONS_PER_ROUND)}/${QUESTIONS_PER_ROUND}${retrySuffix}`;
+      if (lbl) {
+        lbl.textContent = state.playStyle === 'blitz'
+          ? ''
+          : `Card ${Math.min(state.cardNumber, QUESTIONS_PER_ROUND)}/${QUESTIONS_PER_ROUND}${retrySuffix}`;
+      }
       const fill = document.getElementById('progressFill');
       if (fill) {
         if (state.playStyle === 'blitz') {
@@ -1821,8 +1830,12 @@
       }
 
       const enabledStudy = getEnabledSourcesList();
+      const readyStudy = state.worldShapesReady
+        ? enabledStudy
+        : enabledStudy.filter(s => s !== 'borders');
+      const studyPool = readyStudy.length > 0 ? readyStudy : enabledStudy;
       const chosenStudySrc = (!forceType && state.mode !== 'trivia')
-        ? enabledStudy[Math.floor(Math.random() * enabledStudy.length)]
+        ? studyPool[Math.floor(Math.random() * studyPool.length)]
         : null;
 
       // 1. Borders (Country Outline)
@@ -3115,7 +3128,7 @@
 
     // Boot immediately
     loadProgress();
-    setTheme(state.theme || 'retro');
+    setTheme(state.theme || 'airmail');
     buildNextQuestion();
     renderActiveCard();
     loadWorldShapes();
