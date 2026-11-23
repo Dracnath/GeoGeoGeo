@@ -1,4 +1,4 @@
-const CACHE_NAME = 'geo-quest-v2';
+const CACHE_NAME = 'geo-quest-v1.01';
 const APP_SHELL = [
   './',
   './index.html',
@@ -23,8 +23,49 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+function networkFirstWithTimeout(request, timeoutMs) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        caches.match(request).then((cached) => resolve(cached || caches.match('./index.html')));
+      }
+    }, timeoutMs);
+
+    fetch(request).then((response) => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        resolve(response);
+      }
+    }).catch(() => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        caches.match(request).then((cached) => resolve(cached || caches.match('./index.html')));
+      }
+    });
+  });
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const isNavigation =
+    event.request.mode === 'navigate' ||
+    event.request.url.endsWith('/') ||
+    event.request.url.endsWith('/index.html');
+
+  if (isNavigation) {
+    event.respondWith(networkFirstWithTimeout(event.request, 2000));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
@@ -34,7 +75,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => caches.match('./index.html'));
+      });
     })
   );
 });

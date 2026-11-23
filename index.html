@@ -464,6 +464,34 @@
       fill: #38bdf8;
       stroke: #0284c7;
     }
+    .shape-neighbor-path {
+      fill: #334155;
+      stroke: #64748b;
+      stroke-width: 1;
+      stroke-linejoin: round;
+      opacity: 0.78;
+    }
+    .shape-neighbor-label {
+      fill: #cbd5e1;
+      font-size: 8px;
+      font-weight: 700;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+    .theme-airmail .shape-neighbor-path {
+      fill: #dfd3bc;
+      stroke: #8c7a5b;
+    }
+    .theme-airmail .shape-neighbor-label {
+      fill: #2b2623;
+    }
+    .theme-globetrotter .shape-neighbor-path {
+      fill: #bae6fd;
+      stroke: #7dd3fc;
+    }
+    .theme-globetrotter .shape-neighbor-label {
+      fill: #0f172a;
+    }
     .flag-large {
       font-size: 54px;
       line-height: 1.05;
@@ -821,6 +849,9 @@
             Reset Save
           </button>
         </div>
+        <div style="display:flex;justify-content:flex-end;font-size:10px;opacity:0.6;padding-top:2px;">
+          <span id="appVersionLabel">Version: v1.01</span>
+        </div>
 
         <!-- Preserved compatibility elements -->
         <div class="hidden">
@@ -1050,13 +1081,14 @@
         if (!res.ok) throw new Error('Network error');
         const topo = await res.json();
         const geo = topojson.feature(topo, topo.objects.countries);
+        const neighborIdxList = topojson.neighbors(topo.objects.countries.geometries);
 
         const byName = {};
         COUNTRIES.forEach(c => {
           byName[cleanMapName(c.country)] = c;
         });
 
-        geo.features.forEach(feat => {
+        geo.features.forEach((feat, idx) => {
           const rawName = feat.properties && feat.properties.name ? feat.properties.name : '';
           let cleaned = cleanMapName(rawName);
           if (ATLAS_NAME_ALIASES[cleaned] !== undefined) {
@@ -1065,6 +1097,10 @@
           const match = byName[cleaned];
           if (match && !state.shapeMap[match.id]) {
             state.shapeMap[match.id] = feat;
+            const nIndices = neighborIdxList[idx] || [];
+            state.shapeNeighbors[match.id] = nIndices
+              .map(ni => geo.features[ni])
+              .filter(nf => nf && nf.properties && nf.properties.name && nf.properties.name !== 'Antarctica');
           }
         });
 
@@ -1083,20 +1119,42 @@
       }
     }
 
-    function renderCountryOutlineSvg(countryId) {
+    function renderCountryOutlineSvg(countryId, showNeighbors) {
       const feat = state.shapeMap[countryId];
       if (!feat || typeof d3 === 'undefined') {
         return `<div style="font-size:12px;opacity:0.7;">Loading outline...</div>`;
       }
+      const neighbors = showNeighbors ? (state.shapeNeighbors[countryId] || []) : [];
+      const fitObj = neighbors.length > 0
+        ? { type: 'FeatureCollection', features: [feat, ...neighbors] }
+        : feat;
+
       const centroid = d3.geoCentroid(feat);
       const proj = d3.geoAzimuthalEqualArea()
         .rotate([-centroid[0], -centroid[1]])
-        .fitExtent([[14, 14], [246, 166]], feat);
+        .fitExtent([[14, 14], [246, 166]], fitObj);
       const pathGen = d3.geoPath().projection(proj);
+
+      const neighborPaths = neighbors.map(nf => {
+        const nd = pathGen(nf) || '';
+        return `<path d="${nd}" class="shape-neighbor-path"></path>`;
+      }).join('');
+
+      const neighborLabels = neighbors.map(nf => {
+        const pt = pathGen.centroid(nf);
+        if (!pt || Number.isNaN(pt[0]) || Number.isNaN(pt[1])) return '';
+        const x = Math.max(24, Math.min(236, pt[0]));
+        const y = Math.max(12, Math.min(172, pt[1]));
+        const name = (nf.properties && nf.properties.name) ? nf.properties.name : '';
+        return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" class="shape-neighbor-label">${name}</text>`;
+      }).join('');
+
       const dStr = pathGen(feat) || '';
       return `
         <svg viewBox="0 0 260 180" class="shape-svg" aria-label="Country outline">
+          ${neighborPaths}
           <path d="${dStr}" class="shape-path"></path>
+          ${neighborLabels}
         </svg>
       `;
     }
@@ -1228,6 +1286,7 @@
     // =========================================================================
     // SPACED REPETITION & GAME STATE
     // =========================================================================
+    const APP_VERSION = 'v1.01';
     const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
     const ACTIVE_POOL_TARGET = 6;
     const QUESTIONS_PER_ROUND = 10;
@@ -1257,6 +1316,7 @@
       worldShapesReady: false,
       worldShapesFailed: false,
       shapeMap: {},           // country.id -> GeoJSON feature
+      shapeNeighbors: {},     // country.id -> array of neighbor GeoJSON features
       currentQuestion: null,
       typedInput: '',
       triviaFound: [],
@@ -1867,8 +1927,8 @@
           <div id="boxBadge" style="font-size:11px;opacity:0.75;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">
             ${retryTag}${c.subregion.toUpperCase()}
           </div>
-          <div class="shape-box">
-            ${renderCountryOutlineSvg(c.id)}
+          <div id="shapeBoxDisplay" class="shape-box">
+            ${renderCountryOutlineSvg(c.id, false)}
           </div>
           <div style="font-size:12px;opacity:0.65;">WHICH COUNTRY IS THIS?</div>
         `;
@@ -2133,6 +2193,10 @@
       const isCorrect = countryPicked === c.country;
 
       lockMcButtons(countryPicked, c.country);
+      const shapeDisplay = document.getElementById('shapeBoxDisplay');
+      if (shapeDisplay) {
+        shapeDisplay.innerHTML = renderCountryOutlineSvg(c.id, true);
+      }
 
       if (!q.isRetry) {
         state.roundStats.totalCards += 1;
@@ -2562,6 +2626,8 @@
     }
 
     // Hide preview warning as soon as JS runs
+    const verEl = document.getElementById('appVersionLabel');
+    if (verEl) verEl.textContent = `Version: ${APP_VERSION}`;
     const jsBanner = document.getElementById('jsRequiredBanner');
     if (jsBanner) jsBanner.classList.add('hidden');
 
