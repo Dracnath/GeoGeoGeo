@@ -533,10 +533,175 @@
       background: #38b764;
       transition: width 0.25s ease;
     }
+    .card-stage {
+      position: relative;
+      margin-bottom: 12px;
+    }
+    .card-stage .card-box {
+      margin-bottom: 0;
+    }
+    .region-eyebrow {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.65;
+      padding: 2px 7px;
+      border: 1px solid rgba(128, 128, 128, 0.35);
+      border-radius: 4px;
+    }
+    .retry-eyebrow {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #fb7185;
+      padding: 2px 7px;
+      border: 1px solid #fb7185;
+      border-radius: 4px;
+    }
+    .theme-airmail .retry-eyebrow {
+      color: #b02a24;
+      border-color: #b02a24;
+      background: rgba(209, 59, 52, 0.08);
+    }
+    .theme-globetrotter .retry-eyebrow {
+      color: #be123c;
+      border-color: #fb7185;
+      background: #fff1f2;
+    }
+    .prompt-kicker {
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0.78;
+      margin-bottom: 4px;
+    }
+    .card-stamp {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 22;
+      min-width: 108px;
+      max-width: 144px;
+      padding: 5px 8px;
+      border: 2px solid #1e7a46;
+      box-shadow: inset 0 0 0 1px #1e7a46;
+      border-radius: 7px;
+      color: #1e7a46;
+      background: rgba(255, 253, 247, 0.93);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      text-align: center;
+      text-transform: uppercase;
+      pointer-events: none;
+      transform: rotate(-8deg);
+      animation: stampSlam 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards;
+    }
+    .card-stamp.stamp-express {
+      border-color: #204b7d;
+      box-shadow: inset 0 0 0 1px #204b7d;
+      color: #204b7d;
+      border-radius: 999px;
+      padding: 6px 12px;
+    }
+    .card-stamp.stamp-detour {
+      border-color: #d13b34;
+      box-shadow: inset 0 0 0 1px #d13b34;
+      color: #d13b34;
+    }
+    .stamp-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      opacity: 0.9;
+    }
+    .stamp-city-row {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1.15;
+      margin: 2px 0;
+      border-top: 1px dashed currentColor;
+      border-bottom: 1px dashed currentColor;
+      padding: 2px 2px;
+      word-break: break-word;
+    }
+    .stamp-city-row.sm {
+      font-size: 9px;
+    }
+    .stamp-date-row {
+      font-size: 8px;
+      letter-spacing: 0.08em;
+      opacity: 0.85;
+    }
+    .card-stamp.stamp-express {
+      border-color: #204b7d;
+      color: #204b7d;
+    }
+    .card-stamp.stamp-detour {
+      border-color: #d13b34;
+      color: #d13b34;
+    }
+    .theme-retro .card-stamp {
+      background: rgba(19, 23, 34, 0.94);
+      border-color: #34d399;
+      box-shadow: inset 0 0 0 1px #34d399;
+      color: #34d399;
+    }
+    .theme-retro .card-stamp.stamp-express {
+      border-color: #fbbf24;
+      box-shadow: inset 0 0 0 1px #fbbf24;
+      color: #fbbf24;
+    }
+    .theme-retro .card-stamp.stamp-detour {
+      border-color: #fb7185;
+      box-shadow: inset 0 0 0 1px #fb7185;
+      color: #fb7185;
+    }
+    .theme-globetrotter .card-stamp {
+      background: rgba(255, 255, 255, 0.95);
+    }
+    @keyframes stampSlam {
+      0% { transform: scale(1.85) rotate(-15deg); opacity: 0; }
+      75% { transform: scale(0.95) rotate(-6deg); opacity: 1; }
+      100% { transform: scale(1) rotate(-7deg); opacity: 0.96; }
+    }
+    .next-card-corner {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      z-index: 20;
+      padding: 8px 13px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fbbf24;
+      color: #0f172a;
+      border: 2px solid #0f172a;
+      box-shadow: 2px 2px 0 #0f172a;
+    }
+    .theme-globetrotter .next-card-corner {
+      border-radius: 10px;
+      border-color: #0284c7;
+      box-shadow: 0 3px 0 #0284c7;
+    }
     .card-box {
-      padding: 14px 14px;
+      padding: 34px 14px 18px 14px;
       margin-bottom: 12px;
       text-align: center;
+      min-height: 196px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
     .shape-box {
       width: 100%;
@@ -891,7 +1056,7 @@
 
         <!-- SLIM 1-LINE HEADER -->
         <div class="hud-minimal">
-          <span id="hudTitle" class="title-font hud-brand">PAR AVION ATLAS</span>
+          <span id="hudTitle" class="title-font hud-brand">GEO-QUEST</span>
           <div class="hud-stats">
             <span id="hudStreak">🔥 0</span>
           </div>
@@ -918,9 +1083,7 @@
           <button id="chipBorders" onclick="toggleSource('borders')" class="source-chip active-chip">
             <span class="chip-check">✓</span> Borders
           </button>
-          <button id="chipAll" onclick="selectAllSources()" class="source-chip-all active-chip">
-            All
-          </button>
+
         </div>
 
         <!-- BLITZ TIMER & SCORE HUD (SHOWN IN BLITZ) -->
@@ -935,15 +1098,19 @@
           <div id="progressFill" class="progress-fill"></div>
         </div>
 
-        <!-- SPACIOUS QUESTION CARD (CLEAN GEOGRAPHIC HEADER) -->
-        <div id="questionCard" class="stamp-frame card-box">
-          <div id="boxBadge" style="font-size:11px;opacity:0.65;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">
-            NORDIC EUROPE
+        <!-- SPACIOUS QUESTION CARD WITH CORNER NEXT BUTTON -->
+        <div class="card-stage">
+          <div id="questionCard" class="stamp-frame card-box">
+            <div id="boxBadge" class="region-eyebrow">NORDIC EUROPE</div>
+            <span class="flag-large">🇮🇸</span>
+            <div class="prompt-kicker">Capital of</div>
+            <div class="title-font" style="font-size:26px;font-weight:700;">Iceland</div>
+            <div id="stampOverlaySpot" style="margin-top:8px;"></div>
           </div>
-          <span class="flag-large">🇮🇸</span>
-          <div style="font-size:12px;opacity:0.65;margin-bottom:4px;">CAPITAL OF</div>
-          <div class="title-font" style="font-size:26px;font-weight:700;">ICELAND</div>
-          <div id="stampOverlaySpot" style="margin-top:8px;"></div>
+          <div id="cardStampBadge" class="card-stamp hidden"></div>
+          <button id="btnNextCard" onclick="nextSampleQuestion()" class="next-card-corner hidden">
+            NEXT ►
+          </button>
         </div>
 
         <!-- ANSWER CONTROLS AREA -->
@@ -964,18 +1131,10 @@
           </div>
         </div>
 
-        <!-- FEEDBACK BANNER (BULLET POINT STYLE WITH CAPITAL) -->
+        <!-- FULL-WIDTH FEEDBACK BANNER -->
         <div id="feedbackBanner" class="feedback-box hidden">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
-            <div style="flex:1;">
-              <div id="feedbackHeadline" style="font-weight:700;font-size:14px;"></div>
-              <div id="feedbackSubtext" style="font-size:12px;margin-top:4px;opacity:0.92;line-height:1.4;"></div>
-            </div>
-            <button id="btnNextCard" onclick="nextSampleQuestion()"
-              style="padding:8px 13px;font-size:12px;font-weight:700;background:#fbbf24;color:#0f172a;border:none;flex-shrink:0;">
-              NEXT ►
-            </button>
-          </div>
+          <div id="feedbackHeadline" style="font-weight:700;font-size:14px;"></div>
+          <div id="feedbackSubtext" style="font-size:12px;margin-top:4px;opacity:0.92;line-height:1.4;"></div>
         </div>
 
       </div>
@@ -1013,11 +1172,14 @@
 
         <!-- Mastery Level Breakdown (Level 1 to Level 5) -->
         <div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <span style="font-weight:700;">Learning Levels (Mastery):</span>
             <button onclick="advanceBingeRound()" class="btn-setting-action">
-              ⏩ Fast-Forward Round (+1)
+              ⏩ Skip Ahead (+1 Rd)
             </button>
+          </div>
+          <div style="font-size:10px;opacity:0.7;margin-bottom:6px;">
+            Skip ahead to trigger scheduled spaced-repetition reviews now.
           </div>
           <div class="box-stat-grid">
             <div class="box-stat-cell"><div class="lvl-title" style="font-weight:700;color:inherit;">LVL 1</div><div id="statB1">6</div><div style="font-size:9px;opacity:0.7;">New</div></div>
@@ -1059,12 +1221,14 @@
           <button id="btnResetSave" onclick="confirmResetProgress()" style="background:none;border:none;color:#f43f5e;text-decoration:underline;font-size:11px;padding:0;">
             Reset
           </button>
-          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.18</span>
+          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.23</span>
         </div>
 
 
         <!-- Preserved compatibility elements -->
         <div class="hidden">
+          <button onclick="advanceBingeRound()">⏩ Fast-Forward Round (+1)</button>
+          <button id="chipAll" onclick="selectAllSources()">All</button>
           <button onclick="setPlayStyle('blitz')">⚡ 30s BLITZ</button>
           <span id="regionPill">WORLD</span>
           <span id="roundReadout">RD 01</span>
@@ -1741,7 +1905,7 @@
     // =========================================================================
     // SPACED REPETITION & GAME STATE
     // =========================================================================
-    const APP_VERSION = 'v1.18';
+    const APP_VERSION = 'v1.23';
     const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
     const ACTIVE_POOL_TARGET = 6;
     const QUESTIONS_PER_ROUND = 10;
@@ -2454,21 +2618,20 @@
       // 1. Multiple Choice (Clean subregion header, no "BOX" word)
       if (q.kind === 'mcCapital') {
         const c = q.countryObj;
-        const retryTag = q.isRetry ? `<span style="color:#fb7185;font-weight:700;">[↺ RE-TRY] </span>` : '';
+        const retryPill = q.isRetry ? `<div class="retry-eyebrow">↺ Re-try</div>` : '';
         const flagHtml = q.showFlag
           ? renderFlagHtml(c, 'flag-img-lg')
           : `<div style="font-size:11px;opacity:0.55;margin-bottom:8px;">[ FLAG HIDDEN ]</div>`;
 
-        const promptLabel = q.direction === 'capToCountry' ? 'WHICH COUNTRY HAS CAPITAL' : 'CAPITAL OF';
+        const promptLabel = q.direction === 'capToCountry' ? 'Which country has capital' : 'Capital of';
         const promptMain = q.direction === 'capToCountry' ? c.capital.toUpperCase() : c.country.toUpperCase();
 
         cardEl.innerHTML = `
-          <div id="boxBadge" style="font-size:11px;opacity:0.75;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:12px;">
-            ${retryTag}${c.subregion.toUpperCase()}
-          </div>
+          <div id="boxBadge" class="region-eyebrow">${c.subregion}</div>
+          ${retryPill}
           ${flagHtml}
-          <div style="font-size:12px;opacity:0.65;margin-bottom:4px;">${promptLabel}</div>
-          <div class="title-font" style="font-size:25px;font-weight:700;">${promptMain}</div>
+          <div class="prompt-kicker">${promptLabel}</div>
+          <div class="title-font" style="font-size:25px;font-weight:700;">${q.direction === 'capToCountry' ? c.capital : c.country}</div>
           <div id="stampOverlaySpot" style="margin-top:8px;"></div>
         `;
 
@@ -2489,16 +2652,15 @@
       // 2. Standalone Flag Grid (Clean Subregion Header without redundant "Flag Drill"; 4 or 6 flags)
       else if (q.kind === 'flagGrid') {
         const c = q.countryObj;
-        const retryTag = q.isRetry ? `<span style="color:#fb7185;font-weight:700;">[↺ RE-TRY] </span>` : '';
+        const retryPill = q.isRetry ? `<div class="retry-eyebrow">↺ Re-try</div>` : '';
         const gridClass = q.flagCount === 6 ? 'flag-grid-6' : 'flag-grid-4';
         const flagImgSize = q.flagCount === 6 ? 'flag-img-sm' : 'flag-img-md';
 
         cardEl.innerHTML = `
-          <div id="boxBadge" style="font-size:11px;opacity:0.75;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">
-            ${retryTag}${c.subregion.toUpperCase()}
-          </div>
-          <div style="font-size:12px;opacity:0.65;margin-bottom:4px;">SELECT FLAG FOR</div>
-          <div class="title-font" style="font-size:25px;font-weight:700;">${c.country.toUpperCase()}</div>
+          <div id="boxBadge" class="region-eyebrow">${c.subregion}</div>
+          ${retryPill}
+          <div class="prompt-kicker">Select flag for</div>
+          <div class="title-font" style="font-size:25px;font-weight:700;">${c.country}</div>
         `;
 
         answerEl.innerHTML = `
@@ -2518,15 +2680,15 @@
       // 3. Typed Recall
       else if (q.kind === 'typedCapital') {
         const c = q.countryObj;
-        const promptLabel = q.direction === 'capToCountry' ? 'TYPE COUNTRY FOR CAPITAL' : 'TYPE CAPITAL OF';
+        const promptLabel = q.direction === 'capToCountry' ? 'Type country for capital' : 'Type capital of';
         const promptMain = q.direction === 'capToCountry' ? c.capital.toUpperCase() : c.country.toUpperCase();
 
         cardEl.innerHTML = `
-          <div id="boxBadge" style="font-size:11px;opacity:0.75;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;">
-            TYPED RECALL • ${c.subregion.toUpperCase()}
+          <div id="boxBadge" class="region-eyebrow">
+            ${c.subregion}
           </div>
-          <div style="font-size:12px;opacity:0.65;margin-bottom:4px;">${promptLabel}</div>
-          <div class="title-font" style="font-size:25px;font-weight:700;">${promptMain}</div>
+          <div class="prompt-kicker">${promptLabel}</div>
+          <div class="title-font" style="font-size:25px;font-weight:700;">${q.direction === 'capToCountry' ? c.capital : c.country}</div>
         `;
 
         answerEl.innerHTML = `
@@ -2571,16 +2733,15 @@
       }
       else if (q.kind === 'shapeOutline') {
         const c = q.countryObj;
-        const retryTag = q.isRetry ? `<span style="color:#fb7185;font-weight:700;">[↺ RE-TRY] </span>` : '';
+        const retryPill = q.isRetry ? `<div class="retry-eyebrow">↺ Re-try</div>` : '';
         const isTypedShape = (state.playStyle === 'study' && state.hardMode);
         cardEl.innerHTML = `
-          <div id="boxBadge" style="font-size:11px;opacity:0.75;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">
-            ${retryTag}${c.subregion.toUpperCase()}
-          </div>
+          <div id="boxBadge" class="region-eyebrow">${c.subregion}</div>
+          ${retryPill}
           <div id="shapeBoxDisplay" class="shape-box">
             ${renderCountryOutlineSvg(c.id, false)}
           </div>
-          <div style="font-size:12px;opacity:0.65;">${isTypedShape ? 'TYPE WHICH COUNTRY THIS IS' : 'WHICH COUNTRY IS THIS?'}</div>
+          <div class="prompt-kicker">${isTypedShape ? 'Type which country this is' : 'Which country is this?'}</div>
         `;
 
         if (isTypedShape) {
@@ -2842,24 +3003,43 @@
         if (isCorrect) state.roundStats.firstTryCorrect += 1;
       }
 
+      const hookLine = MEMORY_HOOKS[c.country]
+        ? `<li><strong>Tip:</strong> ${MEMORY_HOOKS[c.country]}</li>`
+        : `<li><strong>Region:</strong> ${c.subregion} (${c.continent})</li>`;
+
       if (isCorrect) {
         playTone('correct');
         state.streak += 1;
-        if (state.theme === 'airmail') {
-          const spot = document.getElementById('stampOverlaySpot');
-          if (spot) spot.innerHTML = `<span class="ink-stamp">✓ STAMPED: ${expected}</span>`;
+        const pObj = state.progress[c.id];
+        const lvl = pObj ? pObj.capBox : 1;
+        if (res.speedTier === 'fast') {
+          triggerCardStamp('express', `EXPRESS • LVL ${lvl}`, c);
+        } else {
+          triggerCardStamp('cleared', `ARRIVED • LVL ${lvl}`, c);
         }
-        const speedBadge = res.speedTier === 'fast' ? '⚡ Fast Recall (+2 Levels)! ' : '';
-        showFeedback(true, `${speedBadge}CORRECT: ${c.country} — ${formatCapitalWithPhonetic(c.capital)}`, getCoachingNote(c));
+        const speedBadge = res.speedTier === 'fast' ? '⚡ FAST RECALL (+2)! ' : '';
+        const bulletsHtml = `
+          <ul class="feedback-bullet-list">
+            <li><strong>Country:</strong> ${renderFlagHtml(c, 'flag-img-xs')}${c.country}</li>
+            <li><strong>Capital:</strong> ${formatCapitalWithPhonetic(c.capital)}</li>
+            ${hookLine}
+          </ul>
+        `;
+        showFeedback(true, `${speedBadge}CORRECT!`, bulletsHtml);
       } else {
         playTone('wrong');
         state.streak = 0;
+        triggerCardStamp('detour', 'DETOUR', c);
         queueMissedItemForRetry(c, 'mcCapital');
-        showFeedback(
-          false,
-          `LOCKED AS MISSED • Answer: ${q.direction === 'capToCountry' ? expected : formatCapitalWithPhonetic(expected)}`,
-          `${getCoachingNote(c)} (Re-queued to test again in 3 cards!)`
-        );
+        const bulletsHtml = `
+          <ul class="feedback-bullet-list">
+            <li><strong>Country:</strong> ${renderFlagHtml(c, 'flag-img-xs')}${c.country}</li>
+            <li><strong>Capital:</strong> ${formatCapitalWithPhonetic(c.capital)}</li>
+            ${hookLine}
+            <li><strong>Next step:</strong> Re-queued to test again in 3 cards!</li>
+          </ul>
+        `;
+        showFeedback(false, 'LOCKED AS MISSED', bulletsHtml);
       }
       updateBoxStatsUI();
     }
@@ -2894,6 +3074,11 @@
         playTone('correct');
         state.streak += 1;
         const speedNote = (!q.isRetry && elapsedMs < 2500) ? '⚡ FAST RECALL! ' : '';
+        if (!q.isRetry && elapsedMs < 2500) {
+          triggerCardStamp('express', 'EXPRESS', c);
+        } else {
+          triggerCardStamp('cleared', 'ARRIVED', c);
+        }
         const bulletsHtml = `
           <ul class="feedback-bullet-list">
             <li><strong>Country:</strong> ${renderFlagHtml(c, 'flag-img-xs')}${c.country}</li>
@@ -2905,6 +3090,7 @@
       } else {
         playTone('wrong');
         state.streak = 0;
+        triggerCardStamp('detour', 'DETOUR', c);
         queueMissedItemForRetry(c, 'shapeOutline');
         const bulletsHtml = `
           <ul class="feedback-bullet-list">
@@ -2980,6 +3166,11 @@
         p.flagDueRound = state.bingeRound + 15;
         saveProgress();
 
+        if (!q.isRetry && elapsedMs < 2500) {
+          triggerCardStamp('express', `EXPRESS • LVL ${p.flagBox}`, c);
+        } else {
+          triggerCardStamp('cleared', `ARRIVED • LVL ${p.flagBox}`, c);
+        }
         const bulletsHtml = `
           <ul class="feedback-bullet-list">
             <li><strong>Country:</strong> ${renderFlagHtml(c, 'flag-img-xs')}${c.country}</li>
@@ -2996,6 +3187,7 @@
         p.flagStreak = 0;
         p.flagDueRound = state.bingeRound + 1;
         saveProgress();
+        triggerCardStamp('detour', 'DETOUR', c);
         queueMissedItemForRetry(c, 'flagGrid', q.flagCount);
 
         const bulletsHtml = `
@@ -3092,6 +3284,9 @@
           state.streak += 1;
           if (!q.isRetry) state.roundStats.firstTryCorrect += 1;
           const speedNote = (!q.isRetry && elapsedMs < 4000) ? '⚡ FAST RECALL! ' : '';
+          if (dist > 0) triggerCardStamp('cleared', 'CLEARED', c);
+          else if (!q.isRetry && elapsedMs < 4000) triggerCardStamp('express', 'EXPRESS', c);
+          else triggerCardStamp('cleared', 'ARRIVED', c);
           const msg = dist === 0 ? `${speedNote}EXACT: ${c.country}` : `${speedNote}CLOSE ENOUGH! Accepted "${raw}" for ${c.country}`;
           const bulletsHtml = `
             <ul class="feedback-bullet-list">
@@ -3121,26 +3316,44 @@
       state.roundStats.totalCards += 1;
 
       const elapsedMs = Date.now() - state.questionStartTime;
+      const hookLine = MEMORY_HOOKS[c.country]
+        ? `<li><strong>Tip:</strong> ${MEMORY_HOOKS[c.country]}</li>`
+        : `<li><strong>Region:</strong> ${c.subregion} (${c.continent})</li>`;
+
       if (dist <= 2) {
         playTone('correct');
         state.streak += 1;
         state.roundStats.firstTryCorrect += 1;
         const res = promoteCapital(c.id, true, false, elapsedMs, true);
+        if (dist > 0) triggerCardStamp('cleared', 'CLEARED', c);
+        else if (res.speedTier === 'fast') triggerCardStamp('express', `EXPRESS • LVL ${res.newBox}`, c);
+        else triggerCardStamp('cleared', `ARRIVED • LVL ${res.newBox}`, c);
         const speedPrefix = res.speedTier === 'fast' ? '⚡ FAST RECALL (+2)! ' : '';
-        const msg = dist === 0
-          ? `${speedPrefix}EXACT: ${q.direction === 'capToCountry' ? expected : formatCapitalWithPhonetic(expected)}`
-          : `${speedPrefix}CLOSE ENOUGH! Accepted "${raw}" for ${q.direction === 'capToCountry' ? expected : formatCapitalWithPhonetic(expected)}`;
-        showFeedback(true, msg, getCoachingNote(c));
+        const headline = dist === 0 ? `${speedPrefix}EXACT!` : `${speedPrefix}CLOSE ENOUGH!`;
+        const typoLine = dist > 0 ? `<li><strong>Accepted:</strong> "${raw}" → ${expected}</li>` : '';
+        const bulletsHtml = `
+          <ul class="feedback-bullet-list">
+            <li><strong>Country:</strong> ${renderFlagHtml(c, 'flag-img-xs')}${c.country}</li>
+            <li><strong>Capital:</strong> ${formatCapitalWithPhonetic(c.capital)}</li>
+            ${typoLine}
+            ${hookLine}
+          </ul>
+        `;
+        showFeedback(true, headline, bulletsHtml);
       } else {
         playTone('wrong');
         state.streak = 0;
         promoteCapital(c.id, false, false);
         queueMissedItemForRetry(c, 'mcCapital');
-        showFeedback(
-          false,
-          `LOCKED AS MISSED • Answer: ${q.direction === 'capToCountry' ? expected : formatCapitalWithPhonetic(expected)}`,
-          `${getCoachingNote(c)} (Re-queued for later in this round!)`
-        );
+        const bulletsHtml = `
+          <ul class="feedback-bullet-list">
+            <li><strong>Country:</strong> ${renderFlagHtml(c, 'flag-img-xs')}${c.country}</li>
+            <li><strong>Capital:</strong> ${formatCapitalWithPhonetic(c.capital)}</li>
+            ${hookLine}
+            <li><strong>Next step:</strong> Re-queued to test again in 3 cards!</li>
+          </ul>
+        `;
+        showFeedback(false, 'LOCKED AS MISSED', bulletsHtml);
       }
       updateBoxStatsUI();
     }
@@ -3205,6 +3418,47 @@
     function hideFeedback() {
       const fb = document.getElementById('feedbackBanner');
       if (fb) fb.classList.add('hidden');
+      const nb = document.getElementById('btnNextCard');
+      if (nb) nb.classList.add('hidden');
+      const st = document.getElementById('cardStampBadge');
+      if (st) {
+        st.classList.add('hidden');
+        st.className = 'card-stamp hidden';
+      }
+    }
+
+    function getPassportDateStr() {
+      const d = new Date();
+      const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]}`;
+    }
+
+    function triggerCardStamp(variant, statusLabel, countryObj) {
+      const st = document.getElementById('cardStampBadge');
+      if (!st) return;
+      const retryEl = document.querySelector('#questionCard .retry-eyebrow');
+      if (retryEl) retryEl.style.display = 'none';
+
+      const capName = countryObj ? countryObj.capital : '';
+      const isoCode = (countryObj && countryObj.iso) ? countryObj.iso.toUpperCase() : 'GEO';
+      const isBoat = countryObj && (countryObj.continent === 'Oceania' || (countryObj.subregion && /island|caribbean|indian ocean|atlantic|mediterranean/i.test(countryObj.subregion)) || (countryObj.id % 3 === 0));
+
+      const planeSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>`;
+      const boatSvg = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 21c-1.39 0-2.78-.47-4-1.32-2.44 1.71-5.56 1.71-8 0C6.78 20.53 5.39 21 4 21H2v2h2c1.38 0 2.74-.35 4-.99 2.52 1.29 5.48 1.29 8 0 1.26.65 2.62.99 4 .99h2v-2h-2zM3.95 19H4c1.6 0 3.02-.88 4-2 .98 1.12 2.4 2 4 2s3.02-.88 4-2c.98 1.12 2.4 2 4 2h.05l1.89-6.68c.08-.26.06-.54-.06-.78s-.34-.42-.6-.5L20 10.62V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.62l-1.29.42c-.26.08-.48.26-.6.5s-.15.52-.06.78L3.95 19zM6 6h12v3.97L12 8 6 9.97V6z"/></svg>`;
+
+      const iconSvg = isBoat ? boatSvg : planeSvg;
+      const cityCls = capName.length > 11 ? 'stamp-city-row sm' : 'stamp-city-row';
+
+      st.innerHTML = `
+        <div class="stamp-top-row">${iconSvg}<span>${statusLabel}</span></div>
+        <div class="${cityCls}">${capName}</div>
+        <div class="stamp-date-row">${isoCode} • ${getPassportDateStr()}</div>
+      `;
+      st.className = variant === 'detour'
+        ? 'card-stamp stamp-detour'
+        : variant === 'express'
+        ? 'card-stamp stamp-express'
+        : 'card-stamp';
     }
 
     function showFeedback(isCorrect, headline, subtext) {
@@ -3215,6 +3469,8 @@
       fb.className = isCorrect ? 'feedback-box' : 'feedback-box wrong';
       h.textContent = headline;
       s.innerHTML = subtext;
+      const nb = document.getElementById('btnNextCard');
+      if (nb) nb.classList.remove('hidden');
       if (typeof fb.scrollIntoView === 'function') {
         fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
@@ -3522,13 +3778,8 @@
         if (el) el.className = key === themeName ? 'studio-btn active-theme' : 'studio-btn';
       });
 
-      const titles = {
-        retro: 'GEO-QUEST',
-        airmail: 'PAR AVION ATLAS',
-        globetrotter: 'GLOBETROTTER'
-      };
       const t = document.getElementById('hudTitle');
-      if (t) t.textContent = titles[themeName] || 'GEO-QUEST';
+      if (t) t.textContent = 'GEO-QUEST';
       saveProgress();
       renderActiveCard();
     }
