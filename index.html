@@ -1037,20 +1037,20 @@
       width: 100%;
       text-align: left;
       align-self: stretch;
-      margin-top: -16px;
+      margin-top: -22px;
     }
     .bp-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.09em;
       text-transform: uppercase;
-      opacity: 0.72;
-      padding-bottom: 8px;
-      border-bottom: 1.5px dashed rgba(128, 128, 128, 0.45);
-      margin-bottom: 12px;
+      opacity: 0.52;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed rgba(128, 128, 128, 0.35);
+      margin-bottom: 10px;
     }
     .bp-route {
       display: flex;
@@ -1328,7 +1328,7 @@
           <button id="btnResetSave" onclick="confirmResetProgress()" style="background:none;border:none;color:#f43f5e;text-decoration:underline;font-size:11px;padding:0;">
             Reset
           </button>
-          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.33</span>
+          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.35</span>
         </div>
 
 
@@ -2020,7 +2020,7 @@
     // =========================================================================
     // SPACED REPETITION & GAME STATE
     // =========================================================================
-    const APP_VERSION = 'v1.33';
+    const APP_VERSION = 'v1.35';
     const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
     const ACTIVE_POOL_TARGET = 6;
     const QUESTIONS_PER_ROUND = 10;
@@ -2879,7 +2879,7 @@
               </div>
               <div class="bp-stub">
                 <div class="bp-stub-cell">
-                  <span class="bp-stub-label">Daily Flight${streakBadge}</span>
+                  <span class="bp-stub-label">Daily Blitz${streakBadge}</span>
                   <span class="bp-stub-val accent-gold-text">${dailyStatusVal}</span>
                 </div>
                 <div class="bp-stub-cell">
@@ -2891,22 +2891,29 @@
             </div>
           `;
 
-          const dailyActionBtn = todayRec
-            ? `<button onclick="showDailyCompletedCard()" class="btn-choice choice-row-btn" style="justify-content:center;opacity:0.85;">
-                 <span>✓ DAILY COMPLETE (${todayRec.score} PTS) — SHARE</span>
-               </button>`
-            : `<button onclick="startDailyBlitz()" class="btn-choice choice-row-btn btn-daily-primary">
-                 <span>✈️ PLAY DAILY CHALLENGE (${todayLabel})</span>
-               </button>`;
-
-          answerEl.innerHTML = `
-            <div class="choices-list">
-              ${dailyActionBtn}
-              <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;">
-                <span>⚡ QUICK BLITZ (${regionText.toUpperCase()}) ►</span>
-              </button>
-            </div>
-          `;
+          if (todayRec) {
+            answerEl.innerHTML = `
+              <div class="choices-list">
+                <button onclick="startBlitzRound()" class="btn-choice choice-row-btn btn-daily-primary">
+                  <span>⚡ QUICK BLITZ (${regionText.toUpperCase()}) ►</span>
+                </button>
+                <button id="btnReadyDailyShare" onclick="copyDailyFromReady()" class="btn-choice choice-row-btn" style="justify-content:center;opacity:0.9;">
+                  <span>✓ DAILY COMPLETE (${todayRec.score} PTS) — SHARE</span>
+                </button>
+              </div>
+            `;
+          } else {
+            answerEl.innerHTML = `
+              <div class="choices-list">
+                <button onclick="startDailyBlitz()" class="btn-choice choice-row-btn btn-daily-primary">
+                  <span>✈️ PLAY DAILY CHALLENGE (${todayLabel})</span>
+                </button>
+                <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;">
+                  <span>⚡ QUICK BLITZ (${regionText.toUpperCase()}) ►</span>
+                </button>
+              </div>
+            `;
+          }
           return;
         }
 
@@ -2920,13 +2927,16 @@
             cardEl.innerHTML = `
               <div class="bp-wrap">
                 <div class="bp-header">
-                  <span style="display:inline-flex;align-items:center;gap:5px;">${planeIcon} DAILY FLIGHT • ${getPassportDateStr()}</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;">${planeIcon} DAILY BLITZ • ${getPassportDateStr()}</span>
                   <span>${state.dailyStreak}D STREAK</span>
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 12px 0;">
                   <div>
                     <div class="title-font" style="font-size:34px;font-weight:800;line-height:1;">${rec.score} PTS</div>
-                    <div style="font-size:12px;opacity:0.78;margin-top:4px;">Accuracy: <strong>${rec.acc}%</strong> &middot; Top Combo: <strong>${rec.bestStreak}</strong></div>
+                    <div style="font-size:12px;opacity:0.82;margin-top:6px;line-height:1.45;">
+                      <div>Accuracy: <strong>${rec.acc}%</strong></div>
+                      <div>Top Combo: <strong>${rec.bestStreak}</strong></div>
+                    </div>
                   </div>
                   <div class="card-stamp" style="position:static;transform:rotate(-7deg);animation:none;">
                     <div class="stamp-top-row">${planeIcon}<span>DAILY VISA</span></div>
@@ -2935,7 +2945,7 @@
                   </div>
                 </div>
                 <div style="font-size:11px;opacity:0.7;border-top:1.5px dashed rgba(128,128,128,0.4);padding-top:8px;">
-                  Come back tomorrow for a new world flight, or play Custom Blitz anytime.
+                  Come back tomorrow for a new world tour.
                 </div>
               </div>
             `;
@@ -3880,6 +3890,53 @@
       return `${y}-${m}-${day}`;
     }
 
+    const CHEEKY_DAILY_QUIPS = [
+      "I bet you can't beat me",
+      "Pack your bags and try to top that",
+      "Customs cleared—your turn at the gate",
+      "My passport is heavier than yours",
+      "Think you know where everything is?",
+      "No GPS allowed—beat my score",
+      "First-class score—can you top it?",
+      "Don't get lost on the layover",
+      "Boarding now—try to catch my flight",
+      "Show me your best world tour"
+    ];
+
+    function copyTextToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    }
+
+    function buildDailyShareMessage(score) {
+      const quip = CHEEKY_DAILY_QUIPS[Math.floor(Math.random() * CHEEKY_DAILY_QUIPS.length)];
+      return `I played today's GEO-QUEST Daily (${getPassportDateStr()}) ⚡ ${score} pts ⚡ | ${quip} | https://dracnath.github.io/GeoGeoGeo/`;
+    }
+
+    function copyDailyFromReady() {
+      const todayKey = getTodayDateKey();
+      const rec = state.dailyScores[todayKey];
+      if (!rec) return;
+      playTone('correct');
+      copyTextToClipboard(buildDailyShareMessage(rec.score));
+      const btn = document.getElementById('btnReadyDailyShare');
+      if (btn) {
+        const span = btn.querySelector('span');
+        if (span) span.textContent = `✓ COPIED DAILY RESULT (${rec.score} PTS)!`;
+        setTimeout(() => {
+          if (span) span.textContent = `✓ DAILY COMPLETE (${rec.score} PTS) — SHARE`;
+        }, 2500);
+      }
+    }
+
     function showDailyCompletedCard() {
       playTone('click');
       state.isDailyRun = true;
@@ -4008,12 +4065,9 @@
       const acc = state.blitzAttempts > 0 ? Math.round((state.blitzScore / state.blitzAttempts) * 100) : 0;
       let summaryText = '';
       if (state.isDailyRun) {
-        summaryText = [
-          `✈️ GEO-QUEST Daily (${getPassportDateStr()})`,
-          `⚡ ${state.blitzScore} pts | ${acc}% acc | 🔥 ${state.blitzBestStreak} streak`,
-          `🛂 Daily Streak: ${state.dailyStreak} day${state.dailyStreak === 1 ? '' : 's'}`,
-          `https://dracnath.github.io/GeoGeoGeo/`
-        ].join('\n');
+        const rec = state.dailyScores[getTodayDateKey()];
+        const officialScore = rec ? rec.score : state.blitzScore;
+        summaryText = buildDailyShareMessage(officialScore);
       } else {
         if (!state.challengeCode) {
           const code = encodeChallengeCode();
