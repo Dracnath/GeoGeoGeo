@@ -1140,6 +1140,36 @@
       </div>
     </div>
 
+    <!-- COLLAPSIBLE CHALLENGE CODE DRAWER IN MAIN WINDOW -->
+    <details class="drawer-details" id="challengeDrawer">
+      <summary>
+        <span>🤝 Challenge Code</span>
+        <span id="challengeHeaderBadge" style="font-weight:400;opacity:0.8;">Tap to open</span>
+      </summary>
+      <div class="drawer-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span style="font-size:12px;opacity:0.85;">Share your current setup:</span>
+          <button onclick="createChallengeCode()" class="btn-setting-action" style="padding:5px 12px;">
+            Get Code
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span style="font-size:12px;opacity:0.85;">Enter Code:</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input id="challengeCodeInput" type="text" maxlength="6"
+              placeholder="ABCDEF"
+              oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'')"
+              onkeydown="if(event.key==='Enter') joinChallengeCode()"
+              class="game-input" style="width:94px;padding:5px 8px;font-size:12px;text-align:center;text-transform:uppercase;letter-spacing:0.12em;" />
+            <button onclick="joinChallengeCode()" class="btn-setting-action" style="padding:5px 12px;flex-shrink:0;">
+              Play
+            </button>
+          </div>
+        </div>
+        <div id="challengeStatusText" style="font-size:10px;opacity:0.75;text-align:right;"></div>
+      </div>
+    </details>
+
     <!-- TUCKED CLEAN SETTINGS MENU (MATCHES CURRENT ACTIVE SKIN) -->
     <details class="drawer-details" id="conceptSidebar">
       <summary>
@@ -1179,7 +1209,7 @@
             </button>
           </div>
           <div style="font-size:10px;opacity:0.7;margin-bottom:6px;">
-            Skip ahead to trigger scheduled spaced-repetition reviews now.
+            Review upcoming countries early.
           </div>
           <div class="box-stat-grid">
             <div class="box-stat-cell"><div class="lvl-title" style="font-weight:700;color:inherit;">LVL 1</div><div id="statB1">6</div><div style="font-size:9px;opacity:0.7;">New</div></div>
@@ -1209,28 +1239,6 @@
           </div>
         </div>
 
-        <!-- 6-Letter Challenge Code -->
-        <div style="padding-top:6px;border-top:1px solid rgba(128,128,128,0.2);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
-            <span style="font-weight:700;">🤝 Challenge Code:</span>
-            <div style="display:flex;gap:4px;">
-              <button onclick="createChallengeCode()" class="btn-setting-action">Create</button>
-              <button id="btnCopyChallenge" onclick="copyChallengeCode()" class="btn-setting-action hidden">Copy</button>
-            </div>
-          </div>
-          <div class="text-input-row">
-            <input id="challengeCodeInput" type="text" maxlength="6"
-              placeholder="6-letter code (e.g. KGRTQP)"
-              oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'')"
-              onkeydown="if(event.key==='Enter') joinChallengeCode()"
-              class="game-input" style="padding:6px 10px;font-size:12px;text-transform:uppercase;letter-spacing:0.12em;" />
-            <button onclick="joinChallengeCode()" class="btn-setting-action" style="padding:6px 12px;flex-shrink:0;">
-              Join
-            </button>
-          </div>
-          <div id="challengeStatusText" style="font-size:10px;opacity:0.75;margin-top:4px;"></div>
-        </div>
-
         <!-- Hard Mode (Typed Answers) & Reset -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:6px;border-top:1px solid rgba(128,128,128,0.2);">
           <span style="font-weight:700;">Hard Mode (Type Answers)</span>
@@ -1243,12 +1251,16 @@
           <button id="btnResetSave" onclick="confirmResetProgress()" style="background:none;border:none;color:#f43f5e;text-decoration:underline;font-size:11px;padding:0;">
             Reset
           </button>
-          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.24</span>
+          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.29</span>
         </div>
 
 
         <!-- Preserved compatibility elements -->
         <div class="hidden">
+          <button onclick="createChallengeCode()">New Code</button>
+          <button onclick="createChallengeCode()">Create</button>
+          <button id="btnCopyChallenge" onclick="copyChallengeCode()">Copy</button>
+          <button onclick="joinChallengeCode()">Join</button>
           <button onclick="advanceBingeRound()">⏩ Fast-Forward Round (+1)</button>
           <button id="chipAll" onclick="selectAllSources()">All</button>
           <button onclick="setPlayStyle('blitz')">⚡ 30s BLITZ</button>
@@ -1927,7 +1939,7 @@
     // =========================================================================
     // SPACED REPETITION & GAME STATE
     // =========================================================================
-    const APP_VERSION = 'v1.24';
+    const APP_VERSION = 'v1.29';
     const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
     const ACTIVE_POOL_TARGET = 6;
     const QUESTIONS_PER_ROUND = 10;
@@ -2260,17 +2272,34 @@
       return copy;
     }
 
-    function encodeChallengeCode() {
+    function encodeChallengeCode(existingSeed4) {
       const rIdx = Math.max(0, CHALLENGE_REGIONS.indexOf(state.region));
       const modeBit = state.playStyle === 'blitz' ? 1 : 0;
       const c0 = String.fromCharCode(65 + (rIdx * 2 + modeBit));
       const mask = (state.sources.capitals ? 1 : 0) + (state.sources.flags ? 2 : 0) + (state.sources.borders ? 4 : 0);
       const c1 = String.fromCharCode(65 + Math.max(0, mask - 1));
-      let seedChars = '';
-      for (let i = 0; i < 4; i++) {
-        seedChars += String.fromCharCode(65 + Math.floor(Math.random() * 26));
+      let seedChars = (existingSeed4 && existingSeed4.length === 4) ? existingSeed4 : '';
+      if (!seedChars) {
+        for (let i = 0; i < 4; i++) {
+          seedChars += String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        }
       }
       return c0 + c1 + seedChars;
+    }
+
+    function syncChallengeCodeToCurrentSetup() {
+      if (!state.challengeCode || state.challengeCode.length !== 6) return;
+      const updated = encodeChallengeCode(state.challengeCode.slice(2));
+      state.challengeCode = updated;
+      state.challengeRng = mulberry32(hashString(updated));
+      const inp = document.getElementById('challengeCodeInput');
+      if (inp) inp.value = updated;
+      const badgeEl = document.getElementById('challengeHeaderBadge');
+      if (badgeEl) badgeEl.textContent = updated;
+      const statusEl = document.getElementById('challengeStatusText');
+      if (statusEl) {
+        statusEl.textContent = `Active: ${updated} (${state.region === 'All' ? 'All Countries' : state.region} • ${state.playStyle.toUpperCase()})`;
+      }
     }
 
     function applyChallengeCode(rawCode) {
@@ -2315,8 +2344,10 @@
       if (inp) inp.value = code;
       const copyBtn = document.getElementById('btnCopyChallenge');
       if (copyBtn) copyBtn.classList.remove('hidden');
+      const badgeEl = document.getElementById('challengeHeaderBadge');
+      if (badgeEl) badgeEl.textContent = code;
       const statusEl = document.getElementById('challengeStatusText');
-      if (statusEl) statusEl.textContent = `Active Challenge: ${code} (${state.region === 'All' ? 'All Countries' : state.region} • ${state.playStyle.toUpperCase()})`;
+      if (statusEl) statusEl.textContent = `Active: ${code} (${state.region === 'All' ? 'All Countries' : state.region} • ${state.playStyle.toUpperCase()})`;
 
       if (state.sources.borders && !state.worldShapesReady) loadWorldShapes();
       hideFeedback();
@@ -2336,6 +2367,7 @@
       playTone('click');
       const code = encodeChallengeCode();
       applyChallengeCode(code);
+      copyChallengeCode();
     }
 
     function joinChallengeCode() {
@@ -2373,6 +2405,8 @@
       state.challengeRng = null;
       const copyBtn = document.getElementById('btnCopyChallenge');
       if (copyBtn) copyBtn.classList.add('hidden');
+      const badgeEl = document.getElementById('challengeHeaderBadge');
+      if (badgeEl) badgeEl.textContent = 'Tap to open';
       const statusEl = document.getElementById('challengeStatusText');
       if (statusEl) statusEl.textContent = '';
     }
@@ -2741,7 +2775,9 @@
             <div class="accent-gold-text" style="margin-top:12px;font-size:13px;font-weight:700;">
               🏆 Personal Best (${state.region === 'All' ? 'All Countries' : state.region}): ${bestVal}
             </div>
-            ${state.challengeCode ? `<div style="margin-top:6px;font-size:11px;font-weight:700;opacity:0.85;">🤝 Challenge Code: <code>${state.challengeCode}</code></div>` : ''}
+            ${state.challengeCode
+              ? `<div style="margin-top:6px;font-size:11px;font-weight:700;opacity:0.85;">🤝 Code: <code>${state.challengeCode}</code></div>`
+              : `<div style="margin-top:6px;"><button onclick="shareBlitzChallenge()" style="background:none;border:none;color:inherit;text-decoration:underline;font-size:11px;opacity:0.75;padding:0;">🤝 Get Challenge Code</button></div>`}
           `;
           answerEl.innerHTML = `
             <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;background:#38bdf8;color:#0f172a;border-color:#0284c7;">
@@ -3823,7 +3859,6 @@
 
     function toggleSource(src) {
       clearBlitzTimers();
-      clearChallengeCode();
       const next = { ...state.sources, [src]: !state.sources[src] };
       if (!next.capitals && !next.flags && !next.borders) {
         // Keep at least one source active
@@ -3831,6 +3866,7 @@
         return;
       }
       state.sources = next;
+      syncChallengeCodeToCurrentSetup();
       state.showingRoundSummary = false;
       if (state.playStyle === 'blitz') state.blitzPhase = 'ready';
       playTone('click');
@@ -3843,6 +3879,7 @@
     function selectAllSources() {
       clearBlitzTimers();
       state.sources = { capitals: true, flags: true, borders: true };
+      syncChallengeCodeToCurrentSetup();
       state.showingRoundSummary = false;
       if (state.playStyle === 'blitz') state.blitzPhase = 'ready';
       playTone('click');
@@ -3883,6 +3920,7 @@
     function setPlayStyle(style) {
       clearBlitzTimers();
       state.playStyle = style;
+      syncChallengeCodeToCurrentSetup();
       state.blitzPhase = 'ready';
       state.showingRoundSummary = false;
       playTone('click');
@@ -4017,8 +4055,8 @@
 
     function changeRegion(newRegion) {
       clearBlitzTimers();
-      clearChallengeCode();
       state.region = newRegion;
+      syncChallengeCodeToCurrentSetup();
       if (state.playStyle === 'blitz') state.blitzPhase = 'ready';
       state.showingRoundSummary = false;
       state.requeueList = [];
