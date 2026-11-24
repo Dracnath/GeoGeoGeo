@@ -885,6 +885,7 @@
       background: #102a22;
       color: #ecfdf5;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
+      cursor: pointer;
     }
     .feedback-box.wrong {
       border-color: #f43f5e;
@@ -1031,6 +1032,81 @@
       justify-content: center;
       gap: 3px;
     }
+    /* BOARDING PASS STYLING FOR BLITZ START CARD */
+    .bp-wrap {
+      width: 100%;
+      text-align: left;
+      align-self: stretch;
+      margin-top: -16px;
+    }
+    .bp-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.72;
+      padding-bottom: 8px;
+      border-bottom: 1.5px dashed rgba(128, 128, 128, 0.45);
+      margin-bottom: 12px;
+    }
+    .bp-route {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .bp-title {
+      font-size: 21px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+    .bp-rules {
+      font-size: 11px;
+      opacity: 0.78;
+      margin-bottom: 12px;
+    }
+    .bp-stub {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1.5px dashed rgba(128, 128, 128, 0.45);
+    }
+    .bp-stub-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .bp-stub-label {
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.65;
+    }
+    .bp-stub-val {
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .btn-daily-primary {
+      justify-content: center;
+      background: #204b7d !important;
+      color: #ffffff !important;
+      border-color: #16365c !important;
+    }
+    .theme-retro .btn-daily-primary {
+      background: #38bdf8 !important;
+      color: #0f172a !important;
+      border-color: #0284c7 !important;
+    }
+    .theme-globetrotter .btn-daily-primary {
+      background: #0284c7 !important;
+      color: #ffffff !important;
+      border-color: #0369a1 !important;
+    }
     .summary-row {
       padding: 8px 10px;
       border: 1px solid rgba(128, 128, 128, 0.3);
@@ -1131,10 +1207,11 @@
           </div>
         </div>
 
-        <!-- FULL-WIDTH FEEDBACK BANNER -->
-        <div id="feedbackBanner" class="feedback-box hidden">
+        <!-- FULL-WIDTH TAPPABLE FEEDBACK BANNER -->
+        <div id="feedbackBanner" class="feedback-box hidden" onclick="nextSampleQuestion()" title="Tap to continue">
           <div id="feedbackHeadline" style="font-weight:700;font-size:14px;"></div>
           <div id="feedbackSubtext" style="font-size:12px;margin-top:4px;opacity:0.92;line-height:1.4;"></div>
+          <div style="font-size:10px;opacity:0.65;text-align:right;margin-top:6px;">Tap anywhere to continue ►</div>
         </div>
 
       </div>
@@ -1251,12 +1328,16 @@
           <button id="btnResetSave" onclick="confirmResetProgress()" style="background:none;border:none;color:#f43f5e;text-decoration:underline;font-size:11px;padding:0;">
             Reset
           </button>
-          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.29</span>
+          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.33</span>
         </div>
 
 
         <!-- Preserved compatibility elements -->
         <div class="hidden">
+          <button onclick="startBlitzRound()">⚡ CUSTOM BLITZ (ALL COUNTRIES) ►</button>
+          <button onclick="startBlitzRound()">⚡ PLAY CUSTOM BLITZ ►</button>
+          <button onclick="startBlitzRound()">START BLITZ (60s) ►</button>
+          <button onclick="shareBlitzChallenge()">🤝 Get Challenge Code</button>
           <button onclick="createChallengeCode()">New Code</button>
           <button onclick="createChallengeCode()">Create</button>
           <button id="btnCopyChallenge" onclick="copyChallengeCode()">Copy</button>
@@ -1939,7 +2020,7 @@
     // =========================================================================
     // SPACED REPETITION & GAME STATE
     // =========================================================================
-    const APP_VERSION = 'v1.29';
+    const APP_VERSION = 'v1.33';
     const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
     const ACTIVE_POOL_TARGET = 6;
     const QUESTIONS_PER_ROUND = 10;
@@ -1956,9 +2037,14 @@
       blitzStreak: 0,
       blitzBestStreak: 0,
       blitzNewBest: false,
+      blitzResultCopied: false,
       blitzTimerId: null,
       blitzAdvanceId: null,
       blitzBest: {},          // keyed by `${mode}_${region}`
+      isDailyRun: false,
+      dailyScores: {},        // keyed by YYYY-MM-DD -> { score, acc, bestStreak }
+      dailyStreak: 0,
+      lastDailyDate: '',
       mechanic: 'box1',
       region: 'All',
       soundEnabled: false,
@@ -2007,6 +2093,9 @@
             state.theme = parsed.theme || 'airmail';
             state.blitzBest = parsed.blitzBest || {};
             state.hardMode = Boolean(parsed.hardMode);
+            state.dailyScores = parsed.dailyScores || {};
+            state.dailyStreak = parsed.dailyStreak || 0;
+            state.lastDailyDate = parsed.lastDailyDate || '';
           }
         }
       } catch (e) {}
@@ -2021,7 +2110,10 @@
           streak: state.streak,
           theme: state.theme,
           blitzBest: state.blitzBest,
-          hardMode: state.hardMode
+          hardMode: state.hardMode,
+          dailyScores: state.dailyScores,
+          dailyStreak: state.dailyStreak,
+          lastDailyDate: state.lastDailyDate
         }));
       } catch (e) {}
     }
@@ -2765,53 +2857,129 @@
 
         if (state.blitzPhase === 'ready') {
           if (state.sources.borders && !state.worldShapesReady) loadWorldShapes();
+          const todayKey = getTodayDateKey();
+          const todayRec = state.dailyScores[todayKey];
+          const todayLabel = getPassportDateStr();
+          const planeIcon = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>`;
+          const regionText = state.region === 'All' ? 'All Countries' : state.region;
+          const dailyStatusVal = todayRec ? `✓ ${todayRec.score} pts` : 'Open';
+          const streakBadge = state.dailyStreak > 0 ? ` • ${state.dailyStreak}d` : '';
+
           cardEl.innerHTML = `
-            <div class="title-font" style="font-size:22px;font-weight:700;margin-bottom:8px;">
-              HOW MANY IN 60s?
+            <div class="bp-wrap">
+              <div class="bp-header">
+                <span style="display:inline-flex;align-items:center;gap:5px;">${planeIcon} BOARDING PASS</span>
+                <span>${todayLabel} • GATE 60S</span>
+              </div>
+              <div class="bp-route">
+                <div>
+                  <div class="title-font bp-title">60-Second Blitz</div>
+                  <div class="bp-rules"><strong>-2s</strong> wrong tap &middot; <strong>+2s</strong> every 5-combo</div>
+                </div>
+              </div>
+              <div class="bp-stub">
+                <div class="bp-stub-cell">
+                  <span class="bp-stub-label">Daily Flight${streakBadge}</span>
+                  <span class="bp-stub-val accent-gold-text">${dailyStatusVal}</span>
+                </div>
+                <div class="bp-stub-cell">
+                  <span class="bp-stub-label">Quick Blitz Best (${regionText})</span>
+                  <span class="bp-stub-val">🏆 ${bestVal}</span>
+                </div>
+              </div>
+              ${state.challengeCode ? `<div style="margin-top:8px;font-size:11px;font-weight:700;opacity:0.8;">🤝 Active Code: <code>${state.challengeCode}</code></div>` : ''}
             </div>
-            <div style="font-size:12px;opacity:0.8;line-height:1.45;">
-              <strong>-2s</strong> on wrong taps • <strong>+2s</strong> every 5-streak
-            </div>
-            <div class="accent-gold-text" style="margin-top:12px;font-size:13px;font-weight:700;">
-              🏆 Personal Best (${state.region === 'All' ? 'All Countries' : state.region}): ${bestVal}
-            </div>
-            ${state.challengeCode
-              ? `<div style="margin-top:6px;font-size:11px;font-weight:700;opacity:0.85;">🤝 Code: <code>${state.challengeCode}</code></div>`
-              : `<div style="margin-top:6px;"><button onclick="shareBlitzChallenge()" style="background:none;border:none;color:inherit;text-decoration:underline;font-size:11px;opacity:0.75;padding:0;">🤝 Get Challenge Code</button></div>`}
           `;
+
+          const dailyActionBtn = todayRec
+            ? `<button onclick="showDailyCompletedCard()" class="btn-choice choice-row-btn" style="justify-content:center;opacity:0.85;">
+                 <span>✓ DAILY COMPLETE (${todayRec.score} PTS) — SHARE</span>
+               </button>`
+            : `<button onclick="startDailyBlitz()" class="btn-choice choice-row-btn btn-daily-primary">
+                 <span>✈️ PLAY DAILY CHALLENGE (${todayLabel})</span>
+               </button>`;
+
           answerEl.innerHTML = `
-            <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;background:#38bdf8;color:#0f172a;border-color:#0284c7;">
-              <span>START BLITZ (60s) ►</span>
-            </button>
+            <div class="choices-list">
+              ${dailyActionBtn}
+              <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;">
+                <span>⚡ QUICK BLITZ (${regionText.toUpperCase()}) ►</span>
+              </button>
+            </div>
           `;
           return;
         }
 
         if (state.blitzPhase === 'done') {
           const acc = state.blitzAttempts > 0 ? Math.round((state.blitzScore / state.blitzAttempts) * 100) : 0;
-          const newBestBadge = state.blitzNewBest ? `<div class="accent-gold-text" style="font-weight:700;font-size:13px;margin-bottom:6px;">🎉 NEW PERSONAL BEST!</div>` : '';
+          const planeIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>`;
+
+          if (state.isDailyRun) {
+            const todayKey = getTodayDateKey();
+            const rec = state.dailyScores[todayKey] || { score: state.blitzScore, acc, bestStreak: state.blitzBestStreak };
+            cardEl.innerHTML = `
+              <div class="bp-wrap">
+                <div class="bp-header">
+                  <span style="display:inline-flex;align-items:center;gap:5px;">${planeIcon} DAILY FLIGHT • ${getPassportDateStr()}</span>
+                  <span>${state.dailyStreak}D STREAK</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 12px 0;">
+                  <div>
+                    <div class="title-font" style="font-size:34px;font-weight:800;line-height:1;">${rec.score} PTS</div>
+                    <div style="font-size:12px;opacity:0.78;margin-top:4px;">Accuracy: <strong>${rec.acc}%</strong> &middot; Top Combo: <strong>${rec.bestStreak}</strong></div>
+                  </div>
+                  <div class="card-stamp" style="position:static;transform:rotate(-7deg);animation:none;">
+                    <div class="stamp-top-row">${planeIcon}<span>DAILY VISA</span></div>
+                    <div class="stamp-city-row">${rec.score} PTS</div>
+                    <div class="stamp-date-row">${getPassportDateStr()}</div>
+                  </div>
+                </div>
+                <div style="font-size:11px;opacity:0.7;border-top:1.5px dashed rgba(128,128,128,0.4);padding-top:8px;">
+                  Come back tomorrow for a new world flight, or play Custom Blitz anytime.
+                </div>
+              </div>
+            `;
+            answerEl.innerHTML = `
+              <div class="choices-list">
+                <button id="btnShareBlitzResult" onclick="copyBlitzResultCard()" class="btn-choice choice-row-btn btn-daily-primary">
+                  <span>🤝 ${state.blitzResultCopied ? 'COPIED DAILY RESULT!' : 'CHALLENGE A FRIEND (SHARE)'}</span>
+                </button>
+                <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;">
+                  <span>⚡ PLAY QUICK BLITZ ►</span>
+                </button>
+                <button onclick="setPlayStyle('study')" class="btn-choice choice-row-btn" style="justify-content:center;">
+                  <span>BACK TO STUDY</span>
+                </button>
+              </div>
+            `;
+            return;
+          }
+
+          const newBestBadge = state.blitzNewBest
+            ? `<div class="accent-gold-text" style="font-weight:700;font-size:12px;margin-bottom:6px;">🎉 NEW PERSONAL BEST!</div>`
+            : '';
           cardEl.innerHTML = `
-            <div style="font-size:11px;color:inherit;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">
-              ⏱ TIME'S UP • ${modeLabel} BLITZ
-            </div>
-            ${newBestBadge}
-            <div class="title-font" style="font-size:32px;font-weight:700;margin-bottom:8px;">
-              ${state.blitzScore} PTS
-            </div>
-            <div class="summary-row">
-              <strong>Accuracy:</strong> ${state.blitzScore} / ${state.blitzAttempts} (${acc}%)
-            </div>
-            <div class="summary-row">
-              <strong>Best Streak:</strong> ${state.blitzBestStreak} 🔥 &nbsp;|&nbsp; <strong>Best:</strong> ${bestVal} 🏆
+            <div class="bp-wrap">
+              <div class="bp-header">
+                <span>⏱ QUICK BLITZ • ${modeLabel}</span>
+                <span>BEST: ${bestVal}</span>
+              </div>
+              ${newBestBadge}
+              <div class="title-font" style="font-size:32px;font-weight:800;margin:6px 0 8px 0;">
+                ${state.blitzScore} PTS
+              </div>
+              <div class="summary-row">
+                <strong>Accuracy:</strong> ${state.blitzScore} / ${state.blitzAttempts} (${acc}%) &nbsp;|&nbsp; <strong>Top Combo:</strong> ${state.blitzBestStreak}
+              </div>
             </div>
           `;
           answerEl.innerHTML = `
             <div class="choices-list">
-              <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;background:#38bdf8;color:#0f172a;border-color:#0284c7;">
+              <button onclick="startBlitzRound()" class="btn-choice choice-row-btn btn-daily-primary">
                 <span>PLAY AGAIN ►</span>
               </button>
-              <button onclick="shareBlitzChallenge()" class="btn-choice choice-row-btn" style="justify-content:center;">
-                <span>🤝 ${state.challengeCode ? `CODE: ${state.challengeCode} (COPY)` : 'CREATE 6-LETTER CHALLENGE CODE'}</span>
+              <button id="btnShareBlitzResult" onclick="copyBlitzResultCard()" class="btn-choice choice-row-btn" style="justify-content:center;">
+                <span>📋 ${state.blitzResultCopied ? 'COPIED TO CLIPBOARD!' : `CHALLENGE A FRIEND${state.challengeCode ? ` (${state.challengeCode})` : ''}`}</span>
               </button>
               <button onclick="setPlayStyle('study')" class="btn-choice choice-row-btn" style="justify-content:center;">
                 <span>BACK TO STUDY</span>
@@ -3695,6 +3863,70 @@
       }
     }
 
+    function getTodayDateKey() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function getYesterdayDateKey() {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function showDailyCompletedCard() {
+      playTone('click');
+      state.isDailyRun = true;
+      state.blitzPhase = 'done';
+      state.blitzResultCopied = false;
+      renderActiveCard();
+    }
+
+    function startDailyBlitz() {
+      clearBlitzTimers();
+      playTone('click');
+      hideFeedback();
+      state.isDailyRun = true;
+      state.region = 'All';
+      const regSel = document.getElementById('regionSelect');
+      if (regSel) regSel.value = 'All';
+      const pill = document.getElementById('regionPill');
+      if (pill) pill.textContent = 'WORLD';
+
+      state.sources = { capitals: true, flags: true, borders: true };
+      updateSourceChipsUI();
+      if (!state.worldShapesReady) loadWorldShapes();
+
+      const todayKey = getTodayDateKey();
+      state.challengeRng = mulberry32(hashString('GEOQUEST_DAILY_' + todayKey));
+      state.blitzPhase = 'running';
+      state.blitzTimeLeft = 60.0;
+      state.blitzScore = 0;
+      state.blitzAttempts = 0;
+      state.blitzStreak = 0;
+      state.blitzBestStreak = 0;
+      state.blitzNewBest = false;
+      state.blitzResultCopied = false;
+
+      buildNextQuestion();
+      renderActiveCard();
+
+      state.blitzTimerId = setInterval(() => {
+        state.blitzTimeLeft = Math.max(0, state.blitzTimeLeft - 0.1);
+        updateBlitzHud();
+        updateBoxStatsUI();
+        if (state.blitzTimeLeft <= 0) {
+          finishBlitzRound();
+        }
+      }, 100);
+    }
+
     function getPassportDateStr() {
       const d = new Date();
       const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -3769,6 +4001,49 @@
       }
 
       buildNextQuestion();
+      renderActiveCard();
+    }
+
+    function copyBlitzResultCard() {
+      const acc = state.blitzAttempts > 0 ? Math.round((state.blitzScore / state.blitzAttempts) * 100) : 0;
+      let summaryText = '';
+      if (state.isDailyRun) {
+        summaryText = [
+          `✈️ GEO-QUEST Daily (${getPassportDateStr()})`,
+          `⚡ ${state.blitzScore} pts | ${acc}% acc | 🔥 ${state.blitzBestStreak} streak`,
+          `🛂 Daily Streak: ${state.dailyStreak} day${state.dailyStreak === 1 ? '' : 's'}`,
+          `https://dracnath.github.io/GeoGeoGeo/`
+        ].join('\n');
+      } else {
+        if (!state.challengeCode) {
+          const code = encodeChallengeCode();
+          state.challengeCode = code;
+          const inp = document.getElementById('challengeCodeInput');
+          if (inp) inp.value = code;
+          const badgeEl = document.getElementById('challengeHeaderBadge');
+          if (badgeEl) badgeEl.textContent = code;
+        }
+        const regionName = state.region === 'All' ? 'All Countries' : state.region;
+        summaryText = [
+          `🌍 GEO-QUEST Blitz (60s) — ${regionName}`,
+          `⚡ ${state.blitzScore} pts | ${acc}% acc | 🔥 ${state.blitzBestStreak} streak`,
+          `🤝 Beat my deck — Code: ${state.challengeCode}`,
+          `https://dracnath.github.io/GeoGeoGeo/`
+        ].join('\n');
+      }
+
+      playTone('correct');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(summaryText).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = summaryText;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+      state.blitzResultCopied = true;
       renderActiveCard();
     }
 
@@ -3900,7 +4175,22 @@
       }
     }
 
+    function syncDrawersForBlitz() {
+      const isRunningBlitz = (state.playStyle === 'blitz' && state.blitzPhase === 'running');
+      const chDrawer = document.getElementById('challengeDrawer');
+      const stDrawer = document.getElementById('conceptSidebar');
+      if (chDrawer) {
+        if (isRunningBlitz) { chDrawer.open = false; chDrawer.classList.add('hidden'); }
+        else { chDrawer.classList.remove('hidden'); }
+      }
+      if (stDrawer) {
+        if (isRunningBlitz) { stDrawer.open = false; stDrawer.classList.add('hidden'); }
+        else { stDrawer.classList.remove('hidden'); }
+      }
+    }
+
     function updateBlitzHud() {
+      syncDrawersForBlitz();
       const hud = document.getElementById('blitzHud');
       const tEl = document.getElementById('blitzTimerText');
       const sEl = document.getElementById('blitzScoreText');
@@ -3942,6 +4232,7 @@
       clearBlitzTimers();
       playTone('click');
       hideFeedback();
+      state.isDailyRun = false;
       state.blitzPhase = 'running';
       state.blitzTimeLeft = 60.0;
       state.blitzScore = 0;
@@ -3949,6 +4240,7 @@
       state.blitzStreak = 0;
       state.blitzBestStreak = 0;
       state.blitzNewBest = false;
+      state.blitzResultCopied = false;
       if (state.challengeCode) {
         state.challengeRng = mulberry32(hashString(state.challengeCode));
       }
@@ -4004,12 +4296,29 @@
       clearBlitzTimers();
       state.blitzPhase = 'done';
       state.blitzTimeLeft = 0;
-      const bestKey = `${getActiveSourcesKey()}_${state.region}`;
-      const prevBest = state.blitzBest[bestKey] || 0;
-      if (state.blitzScore > prevBest) {
-        state.blitzBest[bestKey] = state.blitzScore;
-        state.blitzNewBest = true;
-        saveProgress();
+      if (state.isDailyRun) {
+        const todayKey = getTodayDateKey();
+        const acc = state.blitzAttempts > 0 ? Math.round((state.blitzScore / state.blitzAttempts) * 100) : 0;
+        if (!state.dailyScores[todayKey]) {
+          state.dailyScores[todayKey] = {
+            score: state.blitzScore,
+            acc,
+            bestStreak: state.blitzBestStreak
+          };
+          const yestKey = getYesterdayDateKey();
+          state.dailyStreak = (state.lastDailyDate === yestKey) ? (state.dailyStreak + 1) : 1;
+          state.lastDailyDate = todayKey;
+          state.blitzNewBest = true;
+          saveProgress();
+        }
+      } else {
+        const bestKey = `${getActiveSourcesKey()}_${state.region}`;
+        const prevBest = state.blitzBest[bestKey] || 0;
+        if (state.blitzScore > prevBest) {
+          state.blitzBest[bestKey] = state.blitzScore;
+          state.blitzNewBest = true;
+          saveProgress();
+        }
       }
       playTone('correct');
       renderActiveCard();
