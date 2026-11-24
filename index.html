@@ -1209,6 +1209,28 @@
           </div>
         </div>
 
+        <!-- 6-Letter Challenge Code -->
+        <div style="padding-top:6px;border-top:1px solid rgba(128,128,128,0.2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+            <span style="font-weight:700;">🤝 Challenge Code:</span>
+            <div style="display:flex;gap:4px;">
+              <button onclick="createChallengeCode()" class="btn-setting-action">Create</button>
+              <button id="btnCopyChallenge" onclick="copyChallengeCode()" class="btn-setting-action hidden">Copy</button>
+            </div>
+          </div>
+          <div class="text-input-row">
+            <input id="challengeCodeInput" type="text" maxlength="6"
+              placeholder="6-letter code (e.g. KGRTQP)"
+              oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'')"
+              onkeydown="if(event.key==='Enter') joinChallengeCode()"
+              class="game-input" style="padding:6px 10px;font-size:12px;text-transform:uppercase;letter-spacing:0.12em;" />
+            <button onclick="joinChallengeCode()" class="btn-setting-action" style="padding:6px 12px;flex-shrink:0;">
+              Join
+            </button>
+          </div>
+          <div id="challengeStatusText" style="font-size:10px;opacity:0.75;margin-top:4px;"></div>
+        </div>
+
         <!-- Hard Mode (Typed Answers) & Reset -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:6px;border-top:1px solid rgba(128,128,128,0.2);">
           <span style="font-weight:700;">Hard Mode (Type Answers)</span>
@@ -1221,7 +1243,7 @@
           <button id="btnResetSave" onclick="confirmResetProgress()" style="background:none;border:none;color:#f43f5e;text-decoration:underline;font-size:11px;padding:0;">
             Reset
           </button>
-          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.23</span>
+          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.24</span>
         </div>
 
 
@@ -1905,7 +1927,7 @@
     // =========================================================================
     // SPACED REPETITION & GAME STATE
     // =========================================================================
-    const APP_VERSION = 'v1.23';
+    const APP_VERSION = 'v1.24';
     const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
     const ACTIVE_POOL_TARGET = 6;
     const QUESTIONS_PER_ROUND = 10;
@@ -1937,6 +1959,11 @@
       cardAttempted: false,
       questionStartTime: Date.now(),
       showingRoundSummary: false,
+      customStudyQueue: [],
+      roundHistory: [],
+      roundMissedItems: [],
+      challengeCode: '',
+      challengeRng: null,
       roundStats: {
         firstTryCorrect: 0,
         totalCards: 0,
@@ -2002,6 +2029,8 @@
     }
 
     function resetRoundStats() {
+      state.roundHistory = [];
+      state.roundMissedItems = [];
       state.roundStats = {
         firstTryCorrect: 0,
         totalCards: 0,
@@ -2196,13 +2225,156 @@
       return dp[m][n];
     }
 
+    const CHALLENGE_REGIONS = ['All', 'Africa', 'Americas', 'Asia', 'Europe', 'Oceania'];
+
+    function mulberry32(seed) {
+      let a = seed >>> 0;
+      return function() {
+        a |= 0;
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function hashString(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+
+    function getRand() {
+      return state.challengeRng ? state.challengeRng() : Math.random();
+    }
+
     function shuffle(arr) {
       const copy = arr.slice();
       for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(getRand() * (i + 1));
         [copy[i], copy[j]] = [copy[j], copy[i]];
       }
       return copy;
+    }
+
+    function encodeChallengeCode() {
+      const rIdx = Math.max(0, CHALLENGE_REGIONS.indexOf(state.region));
+      const modeBit = state.playStyle === 'blitz' ? 1 : 0;
+      const c0 = String.fromCharCode(65 + (rIdx * 2 + modeBit));
+      const mask = (state.sources.capitals ? 1 : 0) + (state.sources.flags ? 2 : 0) + (state.sources.borders ? 4 : 0);
+      const c1 = String.fromCharCode(65 + Math.max(0, mask - 1));
+      let seedChars = '';
+      for (let i = 0; i < 4; i++) {
+        seedChars += String.fromCharCode(65 + Math.floor(Math.random() * 26));
+      }
+      return c0 + c1 + seedChars;
+    }
+
+    function applyChallengeCode(rawCode) {
+      const code = (rawCode || '').toUpperCase().replace(/[^A-Z]/g, '');
+      if (code.length !== 6) return false;
+      const v0 = code.charCodeAt(0) - 65;
+      const v1 = code.charCodeAt(1) - 65;
+      const rIdx = Math.floor(v0 / 2);
+      const isBlitz = (v0 % 2) === 1;
+      const mask = v1 + 1;
+      if (rIdx < 0 || rIdx >= CHALLENGE_REGIONS.length || mask < 1 || mask > 7) return false;
+
+      clearBlitzTimers();
+      state.region = CHALLENGE_REGIONS[rIdx];
+      const regSel = document.getElementById('regionSelect');
+      if (regSel) regSel.value = state.region;
+      const pill = document.getElementById('regionPill');
+      if (pill) pill.textContent = state.region === 'All' ? 'WORLD' : state.region.toUpperCase();
+
+      state.sources = {
+        capitals: Boolean(mask & 1),
+        flags: Boolean(mask & 2),
+        borders: Boolean(mask & 4)
+      };
+      updateSourceChipsUI();
+
+      state.playStyle = isBlitz ? 'blitz' : 'study';
+      const bStudy = document.getElementById('subBtnStudy');
+      const bBlitz = document.getElementById('subBtnBlitz');
+      if (bStudy) bStudy.className = state.playStyle === 'study' ? 'submode-btn active-submode' : 'submode-btn';
+      if (bBlitz) bBlitz.className = state.playStyle === 'blitz' ? 'submode-btn active-submode' : 'submode-btn';
+
+      state.challengeCode = code;
+      state.challengeRng = mulberry32(hashString(code));
+      state.customStudyQueue = [];
+      state.requeueList = [];
+      state.showingRoundSummary = false;
+      state.cardNumber = 1;
+      resetRoundStats();
+
+      const inp = document.getElementById('challengeCodeInput');
+      if (inp) inp.value = code;
+      const copyBtn = document.getElementById('btnCopyChallenge');
+      if (copyBtn) copyBtn.classList.remove('hidden');
+      const statusEl = document.getElementById('challengeStatusText');
+      if (statusEl) statusEl.textContent = `Active Challenge: ${code} (${state.region === 'All' ? 'All Countries' : state.region} • ${state.playStyle.toUpperCase()})`;
+
+      if (state.sources.borders && !state.worldShapesReady) loadWorldShapes();
+      hideFeedback();
+
+      if (state.playStyle === 'blitz') {
+        state.blitzPhase = 'ready';
+        updateBlitzHud();
+      } else {
+        updateBlitzHud();
+        buildNextQuestion();
+      }
+      renderActiveCard();
+      return true;
+    }
+
+    function createChallengeCode() {
+      playTone('click');
+      const code = encodeChallengeCode();
+      applyChallengeCode(code);
+    }
+
+    function joinChallengeCode() {
+      const inp = document.getElementById('challengeCodeInput');
+      const statusEl = document.getElementById('challengeStatusText');
+      if (!inp) return;
+      const ok = applyChallengeCode(inp.value);
+      if (!ok) {
+        playTone('wrong');
+        if (statusEl) statusEl.textContent = 'Invalid 6-letter code. Check the letters and try again.';
+      } else {
+        playTone('correct');
+      }
+    }
+
+    function copyChallengeCode() {
+      const code = state.challengeCode;
+      if (!code) return;
+      playTone('click');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).catch(() => {});
+      } else {
+        const inp = document.getElementById('challengeCodeInput');
+        if (inp) {
+          inp.select();
+          try { document.execCommand('copy'); } catch (e) {}
+        }
+      }
+      const statusEl = document.getElementById('challengeStatusText');
+      if (statusEl) statusEl.textContent = `Copied code ${code} to clipboard!`;
+    }
+
+    function clearChallengeCode() {
+      state.challengeCode = '';
+      state.challengeRng = null;
+      const copyBtn = document.getElementById('btnCopyChallenge');
+      if (copyBtn) copyBtn.classList.add('hidden');
+      const statusEl = document.getElementById('challengeStatusText');
+      if (statusEl) statusEl.textContent = '';
     }
 
     // =========================================================================
@@ -2300,10 +2472,51 @@
         }
       }
 
+      // 0a. CUSTOM REPLAY QUEUE (Repeat These 10 / Drill Missed)
+      if (!forceType && state.playStyle === 'study' && state.customStudyQueue.length > 0) {
+        const nextItem = state.customStudyQueue.shift();
+        const target = nextItem.countryObj;
+        const distractors = getSmartDistractors(target, 3);
+        if (nextItem.kind === 'shapeOutline' && state.shapeMap[target.id]) {
+          state.currentQuestion = {
+            kind: 'shapeOutline',
+            isRetry: false,
+            countryObj: target,
+            choices: shuffle([target.country, ...distractors.map(d => d.country)])
+          };
+          return;
+        } else if (nextItem.kind === 'flagGrid') {
+          const p = state.progress[target.id] || { flagBox: 2 };
+          const flagCount = (p.flagBox || 2) >= 3 ? 6 : 4;
+          const flagDist = getSmartDistractors(target, flagCount - 1);
+          state.currentQuestion = {
+            kind: 'flagGrid',
+            isRetry: false,
+            countryObj: target,
+            box: p.flagBox || 2,
+            flagCount,
+            options: shuffle([target, ...flagDist])
+          };
+          return;
+        } else {
+          const p = state.progress[target.id] || { capBox: 1 };
+          state.currentQuestion = {
+            kind: 'mcCapital',
+            isRetry: false,
+            direction: 'countryToCap',
+            countryObj: target,
+            box: p.capBox || 1,
+            showFlag: (p.capBox || 1) <= 2,
+            choices: shuffle([target.capital, ...distractors.map(d => d.capital)])
+          };
+          return;
+        }
+      }
+
       // 0. BLITZ MODE (Fast 4-choice random cards across enabled sources & region)
       if (state.playStyle === 'blitz') {
         const enabled = getEnabledSourcesList();
-        const pickSrc = enabled[Math.floor(Math.random() * enabled.length)];
+        const pickSrc = enabled[Math.floor(getRand() * enabled.length)];
         if (pickSrc === 'borders') {
           if (!state.worldShapesReady) {
             state.currentQuestion = { kind: 'shapesLoading' };
@@ -2312,7 +2525,7 @@
           }
           const shapePool = pool.filter(c => Boolean(state.shapeMap[c.id]));
           const usable = shapePool.length >= 4 ? shapePool : COUNTRIES.filter(c => Boolean(state.shapeMap[c.id]));
-          const target = usable[Math.floor(Math.random() * usable.length)];
+          const target = usable[Math.floor(getRand() * usable.length)];
           const distractors = getSmartDistractors(target, 3);
           state.currentQuestion = {
             kind: 'shapeOutline',
@@ -2323,7 +2536,7 @@
           return;
         }
         if (pickSrc === 'flags') {
-          const target = pool[Math.floor(Math.random() * pool.length)];
+          const target = pool[Math.floor(getRand() * pool.length)];
           const distractors = getSmartDistractors(target, 3);
           state.currentQuestion = {
             kind: 'flagGrid',
@@ -2336,9 +2549,9 @@
           return;
         }
         // Learn Blitz: 4-choice Country <-> Capital
-        const target = pool[Math.floor(Math.random() * pool.length)];
+        const target = pool[Math.floor(getRand() * pool.length)];
         const distractors = getSmartDistractors(target, 3);
-        const reverse = Math.random() < 0.35;
+        const reverse = getRand() < 0.35;
         state.currentQuestion = {
           kind: 'mcCapital',
           isRetry: false,
@@ -2359,7 +2572,7 @@
         : enabledStudy.filter(s => s !== 'borders');
       const studyPool = readyStudy.length > 0 ? readyStudy : enabledStudy;
       const chosenStudySrc = (!forceType && state.mode !== 'trivia')
-        ? studyPool[Math.floor(Math.random() * studyPool.length)]
+        ? studyPool[Math.floor(getRand() * studyPool.length)]
         : null;
 
       // 1. Borders (Country Outline)
@@ -2372,7 +2585,7 @@
         }
         const shapePool = pool.filter(c => Boolean(state.shapeMap[c.id]));
         const usablePool = shapePool.length >= 4 ? shapePool : COUNTRIES.filter(c => Boolean(state.shapeMap[c.id]));
-        const target = usablePool[Math.floor(Math.random() * usablePool.length)];
+        const target = usablePool[Math.floor(getRand() * usablePool.length)];
         const distractors = getSmartDistractors(target, 3);
         state.currentQuestion = {
           kind: 'shapeOutline',
@@ -2398,7 +2611,7 @@
 
       // 2. Flags Mode or Forced Flag Grid (Upgrades from 4 to 6 flags as level increases)
       if (forceType === 'box3flag' || chosenStudySrc === 'flags') {
-        const target = pool[Math.floor(Math.random() * pool.length)];
+        const target = pool[Math.floor(getRand() * pool.length)];
         const p = state.progress[target.id] || { flagBox: 2 };
         const flagBox = p.flagBox || 2;
         // 4 flags at Level 1-2, 6 flags at Level 3+
@@ -2419,7 +2632,7 @@
 
       // 3. Forced Typed Recall
       if (forceType === 'box4type') {
-        const target = pool[Math.floor(Math.random() * pool.length)];
+        const target = pool[Math.floor(getRand() * pool.length)];
         state.currentQuestion = {
           kind: 'typedCapital',
           isRetry: false,
@@ -2441,8 +2654,8 @@
         const p = state.progress[id];
         return p.capBox >= 3 && p.flagBox <= 3 && p.flagDueRound <= state.bingeRound;
       });
-      if (dueFlags.length > 0 && Math.random() < 0.3) {
-        const pickId = dueFlags[Math.floor(Math.random() * dueFlags.length)];
+      if (dueFlags.length > 0 && getRand() < 0.3) {
+        const pickId = dueFlags[Math.floor(getRand() * dueFlags.length)];
         const target = COUNTRIES[pickId];
         const p = state.progress[target.id] || { flagBox: 3 };
         const flagBox = p.flagBox || 3;
@@ -2464,7 +2677,7 @@
       if (dueCaps.length === 0) dueCaps = activeIds.slice();
       dueCaps.sort((a, b) => state.progress[a].capBox - state.progress[b].capBox);
 
-      const chosenId = dueCaps[Math.floor(Math.random() * Math.min(3, dueCaps.length))];
+      const chosenId = dueCaps[Math.floor(getRand() * Math.min(3, dueCaps.length))];
       const target = COUNTRIES[chosenId] || pool[0];
       const p = state.progress[target.id] || { capBox: 1 };
 
@@ -2528,6 +2741,7 @@
             <div class="accent-gold-text" style="margin-top:12px;font-size:13px;font-weight:700;">
               🏆 Personal Best (${state.region === 'All' ? 'All Countries' : state.region}): ${bestVal}
             </div>
+            ${state.challengeCode ? `<div style="margin-top:6px;font-size:11px;font-weight:700;opacity:0.85;">🤝 Challenge Code: <code>${state.challengeCode}</code></div>` : ''}
           `;
           answerEl.innerHTML = `
             <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;background:#38bdf8;color:#0f172a;border-color:#0284c7;">
@@ -2559,6 +2773,9 @@
             <div class="choices-list">
               <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;background:#38bdf8;color:#0f172a;border-color:#0284c7;">
                 <span>PLAY AGAIN ►</span>
+              </button>
+              <button onclick="shareBlitzChallenge()" class="btn-choice choice-row-btn" style="justify-content:center;">
+                <span>🤝 ${state.challengeCode ? `CODE: ${state.challengeCode} (COPY)` : 'CREATE 6-LETTER CHALLENGE CODE'}</span>
               </button>
               <button onclick="setPlayStyle('study')" class="btn-choice choice-row-btn" style="justify-content:center;">
                 <span>BACK TO STUDY</span>
@@ -2604,10 +2821,24 @@
           </div>
         `;
 
+        const drillMissedBtn = state.roundMissedItems.length > 0
+          ? `<button onclick="repeatMissedFromSummary()" class="btn-choice choice-row-btn" style="justify-content:center;">
+               <span>🎯 DRILL MISSED (${state.roundMissedItems.length})</span>
+             </button>`
+          : '';
+        const repeat10Btn = state.roundHistory.length > 0
+          ? `<button onclick="repeatRoundFromSummary()" class="btn-choice choice-row-btn" style="justify-content:center;">
+               <span>↺ REPEAT THESE ${state.roundHistory.length}</span>
+             </button>`
+          : '';
         answerEl.innerHTML = `
-          <button onclick="startNextRoundFromSummary()" class="btn-choice choice-row-btn" style="justify-content:center;background:#fbbf24;color:#0f172a;border-color:#d97706;">
-            <span>START ROUND ${state.bingeRound + 1} ►</span>
-          </button>
+          <div class="choices-list">
+            <button onclick="startNextRoundFromSummary()" class="btn-choice choice-row-btn" style="justify-content:center;background:#fbbf24;color:#0f172a;border-color:#d97706;">
+              <span>START ROUND ${state.bingeRound + 1} ►</span>
+            </button>
+            ${repeat10Btn}
+            ${drillMissedBtn}
+          </div>
         `;
         return;
       }
@@ -2933,6 +3164,7 @@
       }
       if (!state.roundStats.missedCountries.includes(countryObj.country)) {
         state.roundStats.missedCountries.push(countryObj.country);
+        state.roundMissedItems.push({ countryObj, kind });
       }
     }
 
@@ -3484,7 +3716,13 @@
       hideFeedback();
 
       const wasRetry = state.currentQuestion && state.currentQuestion.isRetry;
-      if (!wasRetry) {
+      if (!wasRetry && state.currentQuestion && state.currentQuestion.countryObj) {
+        state.roundHistory.push({
+          countryObj: state.currentQuestion.countryObj,
+          kind: state.currentQuestion.kind
+        });
+        state.cardNumber += 1;
+      } else if (!wasRetry) {
         state.cardNumber += 1;
       }
 
@@ -3494,6 +3732,41 @@
         return;
       }
 
+      buildNextQuestion();
+      renderActiveCard();
+    }
+
+    function shareBlitzChallenge() {
+      if (!state.challengeCode) {
+        const code = encodeChallengeCode();
+        state.challengeCode = code;
+        const inp = document.getElementById('challengeCodeInput');
+        if (inp) inp.value = code;
+        const copyBtn = document.getElementById('btnCopyChallenge');
+        if (copyBtn) copyBtn.classList.remove('hidden');
+      }
+      copyChallengeCode();
+      renderActiveCard();
+    }
+
+    function repeatRoundFromSummary() {
+      playTone('click');
+      const items = state.roundHistory.slice();
+      state.showingRoundSummary = false;
+      state.cardNumber = 1;
+      resetRoundStats();
+      state.customStudyQueue = shuffle(items);
+      buildNextQuestion();
+      renderActiveCard();
+    }
+
+    function repeatMissedFromSummary() {
+      playTone('click');
+      const items = state.roundMissedItems.slice();
+      state.showingRoundSummary = false;
+      state.cardNumber = 1;
+      resetRoundStats();
+      state.customStudyQueue = shuffle(items);
       buildNextQuestion();
       renderActiveCard();
     }
@@ -3550,6 +3823,7 @@
 
     function toggleSource(src) {
       clearBlitzTimers();
+      clearChallengeCode();
       const next = { ...state.sources, [src]: !state.sources[src] };
       if (!next.capitals && !next.flags && !next.borders) {
         // Keep at least one source active
@@ -3637,6 +3911,9 @@
       state.blitzStreak = 0;
       state.blitzBestStreak = 0;
       state.blitzNewBest = false;
+      if (state.challengeCode) {
+        state.challengeRng = mulberry32(hashString(state.challengeCode));
+      }
 
       buildNextQuestion();
       renderActiveCard();
@@ -3740,6 +4017,7 @@
 
     function changeRegion(newRegion) {
       clearBlitzTimers();
+      clearChallengeCode();
       state.region = newRegion;
       if (state.playStyle === 'blitz') state.blitzPhase = 'ready';
       state.showingRoundSummary = false;
