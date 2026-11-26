@@ -1,6 +1,6 @@
 {
-  "name": "GEO-QUEST \u2014 World Capitals, Flags & Shapes",
-  "short_name": "GEO-QUEST",
+  "name": "Landing Card: Clear Customs, Learn the World",
+  "short_name": "Landing Card",
   "description": "Spaced-repetition geography game for world capitals, flags, and country outlines.",
   "start_url": "./",
   "scope": "./",

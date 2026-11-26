@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#131722" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="GEO-QUEST" />
+  <meta name="apple-mobile-web-app-title" content="Landing Card" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
-  <title>GEO-QUEST — World Capitals, Flags &amp; Shapes</title>
+  <title>Landing Card: Clear Customs, Learn the World</title>
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
   <style>
@@ -535,7 +535,49 @@
     }
     .card-stage {
       position: relative;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .card-stage::before {
+      content: "";
+      position: absolute;
+      left: 7px;
+      right: 7px;
+      bottom: -5px;
+      height: 14px;
+      z-index: 0;
+      background: #f5ecd8;
+      border: 1.5px solid #b59f79;
+      border-radius: 0 0 6px 6px;
+      pointer-events: none;
+    }
+    .theme-retro .card-stage::before {
+      background: #161c28;
+      border-color: #334155;
+      border-radius: 0;
+    }
+    .theme-globetrotter .card-stage::before {
+      background: #e0f2fe;
+      border-color: #bae6fd;
+      border-radius: 0 0 16px 16px;
+    }
+    .phone-shell {
+      overflow: hidden;
+    }
+    .card-stage .card-box {
+      position: relative;
+      z-index: 2;
+      transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease-in;
+    }
+    .card-box.card-slide-out {
+      transform: translateX(108%) rotate(2.5deg);
+      opacity: 0.15;
+    }
+    @keyframes cardRevealIn {
+      0% { transform: scale(0.985); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .card-box.card-reveal-in {
+      animation: cardRevealIn 0.15s ease-out forwards;
     }
     .card-stage .card-box {
       margin-bottom: 0;
@@ -1132,7 +1174,7 @@
 
         <!-- SLIM 1-LINE HEADER -->
         <div class="hud-minimal">
-          <span id="hudTitle" class="title-font hud-brand">GEO-QUEST</span>
+          <span id="hudTitle" class="title-font hud-brand">LANDING CARD</span>
           <div class="hud-stats">
             <span id="hudStreak">🔥 0</span>
           </div>
@@ -1325,15 +1367,23 @@
           </button>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span style="font-weight:700;">Card Slide Animation</span>
+          <button id="btnCardAnim" onclick="toggleCardAnimation()" class="switch-wrap is-on" role="switch" aria-checked="true">
+            <span class="switch-track"><span class="switch-knob"></span></span>
+            <span class="switch-state-text">ON</span>
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <button id="btnResetSave" onclick="confirmResetProgress()" style="background:none;border:none;color:#f43f5e;text-decoration:underline;font-size:11px;padding:0;">
             Reset
           </button>
-          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.35</span>
+          <span id="appVersionLabel" style="font-size:10px;opacity:0.6;">Version: v1.42</span>
         </div>
 
 
         <!-- Preserved compatibility elements -->
         <div class="hidden">
+          <button onclick="startNextRoundFromSummary()">START ROUND 2 ►</button>
           <button onclick="startBlitzRound()">⚡ CUSTOM BLITZ (ALL COUNTRIES) ►</button>
           <button onclick="startBlitzRound()">⚡ PLAY CUSTOM BLITZ ►</button>
           <button onclick="startBlitzRound()">START BLITZ (60s) ►</button>
@@ -2020,7 +2070,7 @@
     // =========================================================================
     // SPACED REPETITION & GAME STATE
     // =========================================================================
-    const APP_VERSION = 'v1.35';
+    const APP_VERSION = 'v1.42';
     const BOX_INTERVALS_ROUNDS = { 1: 1, 2: 2, 3: 5, 4: 12, 5: 25 };
     const ACTIVE_POOL_TARGET = 6;
     const QUESTIONS_PER_ROUND = 10;
@@ -2049,12 +2099,14 @@
       region: 'All',
       soundEnabled: false,
       hardMode: false,
+      cardAnimation: true,
       resetConfirmPending: false,
       bingeRound: 1,
       streak: 0,
       cardNumber: 1,
       stepCount: 0,
       cardAttempted: false,
+      isTransitioning: false,
       questionStartTime: Date.now(),
       showingRoundSummary: false,
       customStudyQueue: [],
@@ -2093,6 +2145,7 @@
             state.theme = parsed.theme || 'airmail';
             state.blitzBest = parsed.blitzBest || {};
             state.hardMode = Boolean(parsed.hardMode);
+            if (parsed.cardAnimation !== undefined) state.cardAnimation = Boolean(parsed.cardAnimation);
             state.dailyScores = parsed.dailyScores || {};
             state.dailyStreak = parsed.dailyStreak || 0;
             state.lastDailyDate = parsed.lastDailyDate || '';
@@ -2111,6 +2164,7 @@
           theme: state.theme,
           blitzBest: state.blitzBest,
           hardMode: state.hardMode,
+          cardAnimation: state.cardAnimation,
           dailyScores: state.dailyScores,
           dailyStreak: state.dailyStreak,
           lastDailyDate: state.lastDailyDate
@@ -2268,11 +2322,19 @@
       syncSwitchUI('btnHardMode', state.hardMode);
     }
 
+    function toggleCardAnimation() {
+      state.cardAnimation = !state.cardAnimation;
+      playTone('click');
+      syncSwitchUI('btnCardAnim', state.cardAnimation);
+      saveProgress();
+    }
+
     function toggleHardMode() {
       state.hardMode = !state.hardMode;
       playTone('click');
       updateHardModeBtn();
     syncSwitchUI('btnSoundToggle', state.soundEnabled);
+    syncSwitchUI('btnCardAnim', state.cardAnimation);
       saveProgress();
       if (state.playStyle === 'study') {
         hideFeedback();
@@ -2845,6 +2907,7 @@
       const cardEl = document.getElementById('questionCard');
       const answerEl = document.getElementById('answerArea');
       if (!cardEl || !answerEl) return;
+      cardEl.classList.remove('card-slide-out');
 
       updateBoxStatsUI();
 
@@ -2874,6 +2937,7 @@
               <div class="bp-route">
                 <div>
                   <div class="title-font bp-title">60-Second Blitz</div>
+                  <div style="font-size:11px;font-style:italic;opacity:0.72;margin-bottom:3px;">Clear Customs, Learn the World</div>
                   <div class="bp-rules"><strong>-2s</strong> wrong tap &middot; <strong>+2s</strong> every 5-combo</div>
                 </div>
               </div>
@@ -2891,14 +2955,23 @@
             </div>
           `;
 
+          const quickBlitzInner = `
+            <span style="display:flex;flex-direction:column;align-items:center;line-height:1.25;text-align:center;">
+              <span>⚡ QUICK BLITZ</span>
+              <span style="font-style:italic;font-size:12px;font-weight:600;opacity:0.88;">(${regionText.toUpperCase()}) ►</span>
+            </span>
+          `;
           if (todayRec) {
             answerEl.innerHTML = `
               <div class="choices-list">
                 <button onclick="startBlitzRound()" class="btn-choice choice-row-btn btn-daily-primary">
-                  <span>⚡ QUICK BLITZ (${regionText.toUpperCase()}) ►</span>
+                  ${quickBlitzInner}
                 </button>
-                <button id="btnReadyDailyShare" onclick="copyDailyFromReady()" class="btn-choice choice-row-btn" style="justify-content:center;opacity:0.9;">
-                  <span>✓ DAILY COMPLETE (${todayRec.score} PTS) — SHARE</span>
+                <button id="btnReadyDailyShare" onclick="copyDailyFromReady()" class="btn-choice choice-row-btn" style="justify-content:center;opacity:0.92;">
+                  <span style="display:flex;flex-direction:column;align-items:center;line-height:1.3;text-align:center;">
+                    <span>✉️ Daily Blitz complete</span>
+                    <span class="daily-share-sub" style="font-size:12px;font-weight:600;opacity:0.8;">Share your score (${todayRec.score} pts)</span>
+                  </span>
                 </button>
               </div>
             `;
@@ -2909,7 +2982,7 @@
                   <span>✈️ PLAY DAILY CHALLENGE (${todayLabel})</span>
                 </button>
                 <button onclick="startBlitzRound()" class="btn-choice choice-row-btn" style="justify-content:center;">
-                  <span>⚡ QUICK BLITZ (${regionText.toUpperCase()}) ►</span>
+                  ${quickBlitzInner}
                 </button>
               </div>
             `;
@@ -3012,7 +3085,7 @@
 
         cardEl.innerHTML = `
           <div id="boxBadge" class="accent-gold-text" style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">
-            ★ ROUND ${state.bingeRound} COMPLETE ★
+            ${state.bingeRound === 1 ? '★ FIRST LEG COMPLETE ★' : `★ LEG ${state.bingeRound} COMPLETE ★`}
           </div>
           <div class="title-font" style="font-size:24px;font-weight:700;margin-bottom:10px;">
             ${rs.firstTryCorrect} / ${rs.totalCards || QUESTIONS_PER_ROUND} FIRST-TRY
@@ -3048,7 +3121,7 @@
         answerEl.innerHTML = `
           <div class="choices-list">
             <button onclick="startNextRoundFromSummary()" class="btn-choice choice-row-btn" style="justify-content:center;background:#fbbf24;color:#0f172a;border-color:#d97706;">
-              <span>START ROUND ${state.bingeRound + 1} ►</span>
+              <span>BOARD LEG ${state.bingeRound + 1} ►</span>
             </button>
             ${repeat10Btn}
             ${drillMissedBtn}
@@ -3891,7 +3964,6 @@
     }
 
     const CHEEKY_DAILY_QUIPS = [
-      "I bet you can't beat me",
       "Pack your bags and try to top that",
       "Customs cleared—your turn at the gate",
       "My passport is heavier than yours",
@@ -3900,7 +3972,12 @@
       "First-class score—can you top it?",
       "Don't get lost on the layover",
       "Boarding now—try to catch my flight",
-      "Show me your best world tour"
+      "Show me your best world tour",
+      "Window seat claimed—come take the aisle",
+      "Your atlas is sweating right now",
+      "Stamp this score if you can",
+      "Jet-lagged and still faster than you",
+      "Check your compass and try again"
     ];
 
     function copyTextToClipboard(text) {
@@ -3918,7 +3995,7 @@
 
     function buildDailyShareMessage(score) {
       const quip = CHEEKY_DAILY_QUIPS[Math.floor(Math.random() * CHEEKY_DAILY_QUIPS.length)];
-      return `I played today's GEO-QUEST Daily (${getPassportDateStr()}) ⚡ ${score} pts ⚡ | ${quip} | https://dracnath.github.io/GeoGeoGeo/`;
+      return `I played today's Landing Card Daily (${getPassportDateStr()}) ⚡ ${score} pts ⚡ | ${quip} | https://dracnath.github.io/GeoGeoGeo/`;
     }
 
     function copyDailyFromReady() {
@@ -3929,10 +4006,10 @@
       copyTextToClipboard(buildDailyShareMessage(rec.score));
       const btn = document.getElementById('btnReadyDailyShare');
       if (btn) {
-        const span = btn.querySelector('span');
-        if (span) span.textContent = `✓ COPIED DAILY RESULT (${rec.score} PTS)!`;
+        const sub = btn.querySelector('.daily-share-sub');
+        if (sub) sub.textContent = `✓ Copied to clipboard! (${rec.score} pts)`;
         setTimeout(() => {
-          if (span) span.textContent = `✓ DAILY COMPLETE (${rec.score} PTS) — SHARE`;
+          if (sub) sub.textContent = `Share your score (${rec.score} pts)`;
         }, 2500);
       }
     }
@@ -4034,31 +4111,60 @@
     }
 
     function nextSampleQuestion() {
+      if (state.isTransitioning) return;
       if (document.activeElement && typeof document.activeElement.blur === 'function') {
         document.activeElement.blur();
       }
       playTone('click');
       hideFeedback();
 
-      const wasRetry = state.currentQuestion && state.currentQuestion.isRetry;
-      if (!wasRetry && state.currentQuestion && state.currentQuestion.countryObj) {
-        state.roundHistory.push({
-          countryObj: state.currentQuestion.countryObj,
-          kind: state.currentQuestion.kind
-        });
-        state.cardNumber += 1;
-      } else if (!wasRetry) {
-        state.cardNumber += 1;
-      }
+      const cardEl = document.getElementById('questionCard');
+      const advanceNow = () => {
+        const wasRetry = state.currentQuestion && state.currentQuestion.isRetry;
+        if (!wasRetry && state.currentQuestion && state.currentQuestion.countryObj) {
+          state.roundHistory.push({
+            countryObj: state.currentQuestion.countryObj,
+            kind: state.currentQuestion.kind
+          });
+          state.cardNumber += 1;
+        } else if (!wasRetry) {
+          state.cardNumber += 1;
+        }
 
-      if (state.cardNumber > QUESTIONS_PER_ROUND && state.requeueList.length === 0) {
-        state.showingRoundSummary = true;
+        if (state.cardNumber > QUESTIONS_PER_ROUND && state.requeueList.length === 0) {
+          state.showingRoundSummary = true;
+          renderActiveCard();
+          if (cardEl) {
+            cardEl.classList.remove('card-slide-out');
+            if (state.cardAnimation) {
+              cardEl.classList.add('card-reveal-in');
+              setTimeout(() => cardEl.classList.remove('card-reveal-in'), 160);
+            }
+          }
+          return;
+        }
+
+        buildNextQuestion();
         renderActiveCard();
-        return;
-      }
+        if (cardEl) {
+          cardEl.classList.remove('card-slide-out');
+          if (state.cardAnimation) {
+            cardEl.classList.add('card-reveal-in');
+            setTimeout(() => cardEl.classList.remove('card-reveal-in'), 160);
+          }
+        }
+      };
 
-      buildNextQuestion();
-      renderActiveCard();
+      if (state.playStyle === 'study' && state.cardAnimation && cardEl) {
+        state.isTransitioning = true;
+        cardEl.classList.add('card-slide-out');
+        setTimeout(() => {
+          state.isTransitioning = false;
+          advanceNow();
+        }, 180);
+      } else {
+        advanceNow();
+      }
     }
 
     function copyBlitzResultCard() {
@@ -4079,7 +4185,7 @@
         }
         const regionName = state.region === 'All' ? 'All Countries' : state.region;
         summaryText = [
-          `🌍 GEO-QUEST Blitz (60s) — ${regionName}`,
+          `🌍 Landing Card Blitz (60s) — ${regionName}`,
           `⚡ ${state.blitzScore} pts | ${acc}% acc | 🔥 ${state.blitzBestStreak} streak`,
           `🤝 Beat my deck — Code: ${state.challengeCode}`,
           `https://dracnath.github.io/GeoGeoGeo/`
@@ -4458,7 +4564,7 @@
       });
 
       const t = document.getElementById('hudTitle');
-      if (t) t.textContent = 'GEO-QUEST';
+      if (t) t.textContent = 'LANDING CARD';
       saveProgress();
       renderActiveCard();
     }
